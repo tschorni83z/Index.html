@@ -1,60 +1,3 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Carnage: Craft & Mine</title>
-    <style>
-        :root { --gold: #f1c40f; --bg: #121212; --panel: #222; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; }
-        body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; margin: 0; padding: 10px; font-size: 14px; }
-        .panel { background: var(--panel); padding: 12px; border-radius: 10px; border: 1px solid #333; margin-bottom: 8px; }
-        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 11px; margin-top: 5px; color: #aaa; }
-        #log { height: 100px; overflow-y: auto; background: #000; padding: 10px; font-size: 12px; border: 1px solid #333; margin-bottom: 8px; }
-        .screen { display: none; } .active { display: block; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; font-weight: bold; }
-        .btn-hunt { background: #6d214f; border: none; grid-column: span 2; margin-bottom: 5px; }
-        .btn-move { background: var(--blue); border: none; }
-        .btn-craft { background: #d35400; border: none; }
-        .selected { background: #e67e22 !important; }
-        .loc-title { font-size: 18px; color: var(--gold); text-align: center; display: block; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-
-    <div class="panel">
-        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-            <span>Ур. <span id="lvl">1</span></span>
-            <span>💰 <span id="gold">0</span> | 🏦 <span id="bank">0</span></span>
-        </div>
-        <div class="res-grid">
-            <span>🪵 Дерево: <b id="r-wood">0</b></span>
-            <span>🪨 Камень: <b id="r-stone">0</b></span>
-            <span>⛓️ Железо: <b id="r-iron">0</b></span>
-        </div>
-    </div>
-
-    <div id="log">Загрузка мира...</div>
-
-    <div id="scr-world" class="screen active">
-        <span class="loc-title" id="loc-name">Локация</span>
-        <button id="btn-hunt" class="btn-hunt" onclick="hunt()">🔍 НАЙТИ МОНСТРА</button>  
-        <div class="grid" id="nav-btns"></div>
-        <div id="act-btns" class="grid" style="margin-top:8px;"></div>
-    </div>
-
-    <div id="scr-battle" class="screen">
-        <span class="loc-header">⚔️ БОЙ С ВРАГОМ</span>
-        <div class="grid">
-            <button id="atk1" onclick="sel('atk',1,'Голова')">Атк: Голова</button>
-            <button id="def1" onclick="sel('def',1,'Голова')">Защ: Голова</button>
-            <button id="atk2" onclick="sel('atk',2,'Тело')">Атк: Тело</button>
-            <button id="def2" onclick="sel('def',2,'Тело')">Защ: Тело</button>
-            <button style="grid-column:span 2; background:var(--red)" onclick="doTurn()">УДАРИТЬ</button>
-        </div>
-    </div>
-
-    <script>
         const world = {
             'town': { n: 'Город (Безопасно)', paths: ['forest_res', 'mine', 'forest_danger', 'bank'], acts: [{t: 'Крафт: Меч (10 дерева/5 жел)', f: 'craft'}] },
             'bank': { n: 'Банк', paths: ['town'], acts: [{t: 'Внести всё', f: 'dep'}, {t: 'Забрать всё', f: 'with'}] },
@@ -90,7 +33,6 @@
             update();
         }
 
-        // Ресурсы
         window.gather_wood = () => { p.wood += 2; addLog("🪓 Срублено 2 дерева."); update(); };
         window.gather_stone = () => { p.stone += 2; addLog("⛏️ Добыто 2 камня."); update(); };
         window.gather_iron = () => { if(Math.random()>0.5){ p.iron += 1; addLog("⛓️ Найдено железо!"); } else addLog("...только пустая порода."); update(); };
@@ -103,8 +45,8 @@
             update();
         };
 
-        window.dep = () => { p.b += p.g; p.g = 0; update(); };
-        window.with = () => { p.g += p.b; p.b = 0; update(); };
+        window.dep = () => { p.b += p.g; p.g = 0; addLog("Золото в сейфе."); update(); };
+        window.with = () => { p.g += p.b; p.b = 0; addLog("Забрали золото."); update(); };
 
         function hunt() {
             const l = world[p.loc];
@@ -125,20 +67,27 @@
         }
 
         function doTurn() {
-            if(!sAtk || !sDef) return;
+            if(!sAtk || !sDef) { alert("Выбери зоны!"); return; }
             let d = 10 + p.lvl + p.dmgBonus;
             enemy.hp -= d; addLog(`Удар: -${d} HP.`);
+            
             if(enemy.hp <= 0) {
                 p.g += 30; addLog("Победа! +30💰");
                 document.getElementById('scr-battle').classList.remove('active');
                 document.getElementById('scr-world').classList.add('active');
+                enemy = null; sAtk = ''; sDef = '';
             } else {
                 p.hp -= enemy.dmg; addLog(`Враг ранил вас на ${enemy.dmg}`);
             }
-            if(p.hp <= 0) { p.hp = 100; p.g = 0; move('town'); }
+            if(p.hp <= 0) { 
+                addLog("💀 Смерть! Золото потеряно."); 
+                p.hp = 100; p.g = 0; move('town'); 
+                document.getElementById('scr-battle').classList.remove('active');
+                document.getElementById('scr-world').classList.add('active');
+            }
             update();
         }
-■
+
         function addLog(m) {
             const l = document.getElementById('log');
             l.innerHTML += `<div>${m}</div>`; l.scrollTop = l.scrollHeight;
@@ -150,10 +99,8 @@
             document.getElementById('r-wood').innerText = p.wood;
             document.getElementById('r-stone').innerText = p.stone;
             document.getElementById('r-iron').innerText = p.iron;
+            document.getElementById('lvl').innerText = p.lvl;
             localStorage.setItem('c_save_v4', JSON.stringify(p));
         }
 
         move('town');
-    </script>
-</body>
-</html>
