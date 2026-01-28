@@ -11,34 +11,36 @@
         
         #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; }
-        .auth-form h2 { color: var(--gold); text-align: center; margin-bottom: 20px; }
+        .auth-form h2 { color: var(--gold); text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
         .auth-form input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; }
         
         .auth-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 10px; border-radius: 5px; cursor: pointer; }
+        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .auth-tabs button.active { background: var(--gold); color: #000; border: none; }
 
-        .btn-main { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #auth-msg { font-size: 11px; text-align: center; margin-top: 10px; min-height: 20px; }
+        .btn-main { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
+        #auth-msg { font-size: 11px; text-align: center; margin-top: 12px; min-height: 20px; line-height: 1.4; }
 
-        /* Интерфейс игры */
+        /* Игровой интерфейс */
         #game-ui { display: none; }
-        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; }
+        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
         .bar-bg { height: 14px; background: #222; border-radius: 7px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
         .fill { height: 100%; transition: 0.4s; width: 0%; }
         .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 14px; color: #fff; z-index: 2; font-weight: bold; }
+        
         .screen { display: none; padding: 15px; } .active { display: block; }
-        #log { height: 100px; overflow-y: auto; background: #000; padding: 10px; font-size: 11px; border: 1px solid var(--border); margin: 10px; color: #aaa; }
+        #log { height: 100px; overflow-y: auto; background: #000; padding: 10px; font-size: 11px; border: 1px solid var(--border); margin: 10px; color: #00ff00; font-family: monospace; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 65px; }
-        .nav-item { flex: 1; text-align: center; padding: 10px; font-size: 10px; color: #555; cursor: pointer; }
-        .nav-item.active { color: var(--gold); }
+        .nav-item { flex: 1; text-align: center; padding: 12px; font-size: 10px; color: #555; cursor: pointer; }
+        .nav-item.active { color: var(--gold); background: #111; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
         <div class="auth-form">
-            <h2>TSCHORNI GAME</h2>
+            <h2>Tschorni Online</h2>
             <div class="auth-tabs">
                 <button id="tab-login" class="active" onclick="setAuthMode('login')">ВХОД</button>
                 <button id="tab-reg" onclick="setAuthMode('reg')">РЕГИСТРАЦИЯ</button>
@@ -56,19 +58,27 @@
     <div id="game-ui">
         <div class="header">
             <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:5px;">
-                <b id="ui-nick">---</b>
+                <b id="ui-nick">Загрузка...</b>
                 <b>💰 <span id="gold">0</span></b>
             </div>
             <div class="bar-bg"><div class="bar-txt">❤️ <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
             <div class="bar-bg"><div class="bar-txt">💪 <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
         </div>
+        
         <div id="log"></div>
+
         <div id="scr-town" class="screen active">
-            <button class="btn-main" onclick="addLog('Вы гуляете по городу...')">Осмотреться</button>
-            <button class="btn-main" onclick="logout()" style="background:#333; color:#fff; margin-top:20px;">ВЫЙТИ</button>
+            <div style="background:var(--panel); padding:20px; border-radius:8px; border:1px solid var(--border); text-align:center;">
+                <p>Вы находитесь в городе.</p>
+                <button class="btn-main" onclick="addLog('Вы осмотрели окрестности...')">Осмотреться</button>
+                <button class="btn-main" onclick="logout()" style="background:#222; color:#888; margin-top:20px;">ВЫЙТИ ИЗ АККАУНТА</button>
+            </div>
         </div>
+
         <div class="nav-bar">
             <div class="nav-item active">🏙️<br>Город</div>
+            <div class="nav-item" onclick="addLog('Карта будет доступна скоро...')">🧭<br>Мир</div>
+            <div class="nav-item" onclick="addLog('Инвентарь в разработке...')">👤<br>Герой</div>
         </div>
     </div>
 
@@ -94,26 +104,32 @@
             const email = document.getElementById('auth-email').value.trim();
             const pass = document.getElementById('auth-pass').value.trim();
             const msg = document.getElementById('auth-msg');
+            const btn = document.getElementById('auth-btn');
 
+            if (!nick || !pass || (authMode === 'reg' && !email)) {
+                msg.style.color = "var(--red)";
+                return msg.innerText = "Заполните все поля!";
+            }
+
+            btn.disabled = true;
             msg.style.color = "#fff";
-            msg.innerText = "Загрузка...";
+            msg.innerText = "Подождите...";
 
             try {
                 if (authMode === 'reg') {
-                    // 1. Проверка ника на уникальность
-                    const { data: checkNick } = await supabase.from('users').select('username').eq('username', nick).single();
-                    if (checkNick) throw new Error("Этот ник уже занят!");
+                    // 1. Проверка ника
+                    const { data: nickExists } = await supabase.from('users').select('username').eq('username', nick).single();
+                    if (nickExists) throw new Error("Этот никнейм уже занят!");
 
-                    // 2. Регистрация
+                    // 2. Регистрация в Auth
                     const { data: authData, error: authError } = await supabase.auth.signUp({
-                        email, 
+                        email: email,
                         password: pass,
                         options: { data: { nickname: nick } }
                     });
-
                     if (authError) throw authError;
 
-                    // 3. Создание записи в таблице (email_hidden нужен для входа по нику)
+                    // 3. Создание профиля в public.users
                     if (authData.user) {
                         const { error: dbError } = await supabase.from('users').insert({
                             id: authData.user.id,
@@ -121,39 +137,43 @@
                             email_hidden: email,
                             save_data: { username: nick, hp: 100, st: 100, gold: 100, lvl: 1 }
                         });
-                        if (dbError) console.error("DB Error:", dbError);
+                        if (dbError) throw dbError;
                     }
 
                     msg.style.color = "var(--green)";
-                    msg.innerText = "Успех! Подтвердите почту и войдите.";
+                    msg.innerText = "Успех! Подтвердите Email в письме и войдите.";
                 } else {
                     // ВХОД
-                    const { data: uData } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                    if (!uData) throw new Error("Никнейм не найден!");
+                    const { data: userData, error: userError } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
+                    if (userError || !userData) throw new Error("Никнейм не найден!");
 
                     const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-                        email: uData.email_hidden,
+                        email: userData.email_hidden,
                         password: pass
                     });
-
                     if (loginError) throw loginError;
-                    loadGame(loginData.user);
+
+                    loadPlayerData(loginData.user);
                 }
             } catch (err) {
                 msg.style.color = "var(--red)";
                 msg.innerText = err.message;
+            } finally {
+                btn.disabled = false;
             }
         }
 
-        async function loadGame(user) {
-            const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
-            if (data) {
-                p = data.save_data;
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('game-ui').style.display = 'block';
-                updateUI();
-                addLog("Добро пожаловать, " + p.username);
+        async function loadPlayerData(user) {
+            const { data, error } = await supabase.from('users').select('*').eq('id', user.id).single();
+            if (error || !data) {
+                console.error("Ошибка загрузки данных профиля");
+                return;
             }
+            p = data.save_data;
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            updateUI();
+            addLog("Вы вошли как " + p.username);
         }
 
         function updateUI() {
@@ -177,9 +197,10 @@
             location.reload();
         }
 
+        // Авто-вход при наличии сессии
         window.onload = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if (session) loadGame(session.user);
+            if (session) loadPlayerData(session.user);
         };
     </script>
 </body>
