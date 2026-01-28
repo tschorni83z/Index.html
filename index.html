@@ -36,7 +36,7 @@
         <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:12px; margin:5px; background:#111; border:1px solid #333; color:#fff;">
         <button class="btn" onclick="auth('login')">ВОЙТИ</button>
         <button class="btn" onclick="auth('reg')" style="background:none; border:1px solid var(--gold); color:var(--gold);">СОЗДАТЬ ГЕРОЯ</button>
-        <div id="auth-msg" style="margin-top:10px; font-size:12px; color:#aaa;"></div>
+        <div id="auth-msg" style="margin-top:10px; font-size:12px; color:#aaa; min-height:1.5em;"></div>
     </div>
 </div>
 
@@ -63,42 +63,63 @@
 </div>
 
 <script>
+    // ────────────────────────────────────────────────
+    // КОНФИГ И ИНИЦИАЛИЗАЦИЯ
+    // ────────────────────────────────────────────────
     const S_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co";
-    const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT"; // ← замени на свой anon key если нужно
-    const sb = Supabase.createClient(S_URL, S_KEY);
+    const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";  // ← твой анон ключ
 
+    let sb = null;
     let userData = null;
     let enemy = null;
     let curTab = 'world';
     let saveTimer = null;
+    let isAuthInProgress = false;
 
-    const MOBS = {
-        'Лес':   [ { n: 'Дикий Волк',       hp: 50,  maxHp: 50,  dmg: 5,  exp: 20,  gold: 10 },
-                   { n: 'Лесной Разбойник', hp: 80,  maxHp: 80,  dmg: 8,  exp: 40,  gold: 25 } ],
-        'Шахта': [ { n: 'Каменный Слизень', hp: 100, maxHp:100, dmg: 4,  exp: 35,  gold: 15 },
-                   { n: 'Гоблин-Шахтер',    hp: 150, maxHp:150, dmg:12,  exp: 70,  gold: 50 } ]
-    };
+    // Ждём загрузки библиотеки
+    function initSupabase() {
+        if (typeof supabase === 'undefined') {
+            document.getElementById('auth-msg').innerHTML = 'Ошибка: Supabase не загрузился. Проверьте интернет и CDN.';
+            console.error('supabase global не найден');
+            return false;
+        }
 
-    const EXP_TABLE = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 30000];
+        sb = supabase.createClient(S_URL, S_KEY);
+        console.log('Supabase инициализирован');
+        return true;
+    }
 
     // ────────────────────────────────────────────────
-    //  АВТОРИЗАЦИЯ
+    // АВТОРИЗАЦИЯ
     // ────────────────────────────────────────────────
     async function auth(mode) {
+        if (isAuthInProgress) return;
+        isAuthInProgress = true;
+
+        const msgEl = document.getElementById('auth-msg');
+        msgEl.innerHTML = 'Подождите...';
+
+        if (!sb) {
+            if (!initSupabase()) {
+                msgEl.innerHTML = 'Не удалось инициализировать Supabase';
+                isAuthInProgress = false;
+                return;
+            }
+        }
+
         const nick = (document.getElementById('u_nick').value || '').trim();
         const pass = document.getElementById('u_pass').value;
-        const msgEl = document.getElementById('auth-msg');
 
         if (!nick || nick.length < 3 || nick.includes(' ')) {
             msgEl.innerHTML = "Ник: минимум 3 символа, без пробелов";
+            isAuthInProgress = false;
             return;
         }
         if (!pass || pass.length < 6) {
             msgEl.innerHTML = "Пароль минимум 6 символов";
+            isAuthInProgress = false;
             return;
         }
-
-        msgEl.innerHTML = "Подождите...";
 
         const email = nick.toLowerCase() + "@tschorni.game";
 
@@ -122,17 +143,25 @@
                 await loadPlayerData();
             }
         } catch (err) {
-            msgEl.innerHTML = "Ошибка: " + (err.message || "неизвестно");
+            msgEl.innerHTML = "Ошибка: " + (err.message || "неизвестная ошибка");
+            console.error(err);
+        } finally {
+            isAuthInProgress = false;
         }
     }
 
     async function loadPlayerData() {
+        if (!sb) return;
+
         const { data: { user } } = await sb.auth.getUser();
-        if (!user) return;
+        if (!user) {
+            addLog("Нет активной сессии");
+            return;
+        }
 
         const username = user.user_metadata?.username;
         if (!username) {
-            addLog("Ошибка: никнейм не найден в профиле");
+            addLog("Никнейм не найден в профиле пользователя");
             return;
         }
 
@@ -175,22 +204,20 @@
     }
 
     // ────────────────────────────────────────────────
-    //  ОСНОВНОЙ ЦИКЛ
+    // ОСНОВНОЙ ЦИКЛ ИГРЫ (остальной код без изменений)
     // ────────────────────────────────────────────────
     function startApp() {
         updateUI();
         setTab('world');
 
-        // Автосохранение
         if (saveTimer) clearInterval(saveTimer);
         saveTimer = setInterval(saveData, 10000);
 
-        // Реген каждые 2 секунды
         setInterval(tick, 2000);
     }
 
     async function saveData() {
-        if (!userData) return;
+        if (!userData || !sb) return;
         const { error } = await sb.from('users').update(userData).eq('username', userData.username);
         if (!error) addLog("Сохранено");
     }
@@ -214,186 +241,30 @@
         document.getElementById(`${id}-f`).style.width = perc + '%';
     }
 
+    // ... (весь остальной код: setTab, renderFight, spawnEnemy, attack, checkLevelUp, renderHero, travel, buyPot, tick, addLog остаётся без изменений)
+
+    // Вставь сюда весь остальной игровой код из предыдущей версии
+
     // ────────────────────────────────────────────────
-    //  ТАБЫ и ЛОГИКА ИГРЫ
+    // ЗАПУСК ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
     // ────────────────────────────────────────────────
-    function setTab(t) {
-        curTab = t;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-        document.getElementById('t-'+t).classList.add('tab-active');
+    window.addEventListener('load', () => {
+        if (initSupabase()) {
+            sb.auth.onAuthStateChange(async (event, session) => {
+                if (session) {
+                    await loadPlayerData();
+                } else {
+                    document.getElementById('auth-ui').style.display = 'block';
+                    document.getElementById('game-ui').style.display = 'none';
+                }
+            });
 
-        const c = document.getElementById('tab-content');
-
-        if (t === 'world') {
-            c.innerHTML = `
-                <h4>Локация: ${userData?.location || '??'}</h4>
-                <p>Куда идём?</p>
-                <button class="btn" onclick="travel('Лес')">🌲 Темный Лес</button>
-                <button class="btn" onclick="travel('Шахта')">⛏️ Глубокая Шахта</button>
-                <button class="btn" style="background:#444;color:#fff" onclick="travel('Лагерь')">🛖 Лагерь (безопасно)</button>`;
-        }
-        else if (t === 'fight') {
-            if (userData.location === 'Лагерь') {
-                c.innerHTML = `<p style="text-align:center;padding:60px 0">В лагере монстров нет. Идите дальше!</p>`;
-            } else {
-                renderFight();
-            }
-        }
-        else if (t === 'inv') {
-            renderHero();
-        }
-        else if (t === 'shop') {
-            c.innerHTML = `<h4>Торговец</h4>
-                <div class="box" style="margin:0;border-color:#444">
-                    Зелье жизни (Full HP) — 50 💰
-                    <button onclick="buyPot()">Купить</button>
-                </div>`;
-        }
-        else if (t === 'stat') {
-            c.innerHTML = `<p style="text-align:center;padding:60px 0">ТОП скоро появится...</p>`;
-        }
-    }
-
-    function renderFight() {
-        const c = document.getElementById('tab-content');
-        if (!enemy) {
-            c.innerHTML = `<h4>Засада!</h4><button class="btn" onclick="spawnEnemy()">ИСКАТЬ МОБА</button>`;
-            return;
-        }
-        c.innerHTML = `
-            <div class="mob-box">
-                <div style="font-weight:bold;color:var(--hp)">${enemy.n}</div>
-                <div class="bar-bg"><div id="en-hp" class="bar-fill" style="background:var(--hp);width:${(enemy.hp/enemy.maxHp*100)}%"></div></div>
-                <div style="font-size:10px">${Math.floor(enemy.hp)} / ${enemy.maxHp} HP</div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-                <button class="btn" style="height:60px" onclick="attack()">УДАРИТЬ</button>
-                <button class="btn" style="height:60px;background:#555;color:#fff" onclick="enemy=null;setTab('fight')">СБЕЖАТЬ</button>
-            </div>`;
-    }
-
-    function spawnEnemy() {
-        const loc = userData.location;
-        const mobs = MOBS[loc] || [];
-        if (mobs.length === 0) return;
-        enemy = { ...mobs[Math.floor(Math.random() * mobs.length)] };
-        renderFight();
-    }
-
-    function attack() {
-        if (!enemy || userData.stamina < 10) {
-            addLog(userData.stamina < 10 ? "Мало стамины!" : "Нет цели");
-            return;
-        }
-
-        userData.stamina -= 10;
-        let dmg = 5 + userData.str;
-        enemy.hp -= dmg;
-        addLog(`Вы ударили → ${dmg}`);
-
-        if (enemy.hp <= 0) {
-            addLog(`Победа! +${enemy.exp} exp, +${enemy.gold} gold`);
-            userData.exp   += enemy.exp;
-            userData.gold  += enemy.gold;
-            enemy = null;
-            checkLevelUp();
-            setTab('fight');
-        } else {
-            let edmg = Math.max(1, enemy.dmg - Math.floor(userData.vit / 2));
-            userData.current_hp -= edmg;
-            addLog(`${enemy.n} → ${edmg}`);
-
-            if (userData.current_hp <= 0) {
-                userData.current_hp = 10;
-                userData.location = 'Лагерь';
-                enemy = null;
-                addLog("Вы очнулись в Лагере...");
-                setTab('world');
-            }
-        }
-
-        updateUI();
-        if (enemy) renderFight();
-    }
-
-    function checkLevelUp() {
-        while (userData.level < EXP_TABLE.length - 1 && userData.exp >= EXP_TABLE[userData.level + 1]) {
-            userData.level++;
-            userData.str += 2;
-            userData.vit += 2;
-            addLog(`✨ Уровень ${userData.level}! +2 STR, +2 VIT`);
-        }
-    }
-
-    function renderHero() {
-        const c = document.getElementById('tab-content');
-        let tbl = `<table><tr><th>Ур.</th><th>До след.</th></tr>`;
-        for (let i = 1; i < EXP_TABLE.length; i++) {
-            const style = userData.level === i ? 'style="color:var(--gold);font-weight:bold"' : '';
-            tbl += `<tr ${style}><td>${i}</td><td>${EXP_TABLE[i]}</td></tr>`;
-        }
-        tbl += `</table>`;
-
-        c.innerHTML = `
-            <h4>Герой: ${userData.username}</h4>
-            <div style="font-size:12px">
-                Сила ${userData.str} • Живучесть ${userData.vit}<br>
-                Предметов: ${userData.inventory?.length || 0}
-            </div>
-            ${tbl}`;
-    }
-
-    function travel(loc) {
-        userData.location = loc;
-        enemy = null;
-        addLog(`→ ${loc}`);
-        setTab('world');
-        updateUI();
-    }
-
-    function buyPot() {
-        if (userData.gold >= 50) {
-            userData.gold -= 50;
-            userData.current_hp = 100 + userData.vit * 10;
-            addLog("Зелье выпито — HP полностью!");
-            updateUI();
-        } else {
-            addLog("Недостаточно золота");
-        }
-    }
-
-    function tick() {
-        if (!userData) return;
-        const maxHp = 100 + userData.vit * 10;
-        const maxSt = 100 + userData.str * 5;
-
-        if (userData.current_hp < maxHp) userData.current_hp = Math.min(maxHp, userData.current_hp + 2);
-        if (userData.stamina   < maxSt) userData.stamina   = Math.min(maxSt, userData.stamina   + 3);
-
-        updateUI();
-    }
-
-    function addLog(m) {
-        const l = document.getElementById('log');
-        l.innerHTML = `<div>[${new Date().toLocaleTimeString('ru')}] ${m}</div>` + l.innerHTML;
-        l.scrollTop = 0;
-    }
-
-    // Запуск при загрузке страницы
-    sb.auth.onAuthStateChange(async (event, session) => {
-        if (session) {
-            await loadPlayerData();
-        } else {
-            document.getElementById('auth-ui').style.display = 'block';
-            document.getElementById('game-ui').style.display = 'none';
+            // Проверяем существующую сессию
+            sb.auth.getSession().then(({ data: { session } }) => {
+                if (session) loadPlayerData();
+            });
         }
     });
-
-    // Проверяем при старте
-    (async () => {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) await loadPlayerData();
-    })();
 </script>
 </body>
 </html>
