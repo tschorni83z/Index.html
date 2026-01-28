@@ -3,41 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>МИР ТЬМЫ</title>
+    <title>МИР ТЬМЫ: EVOLUTION</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0a0a0a; --box: #151515; }
+        :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0a0a0a; --box: #151515; --border: #333; }
         body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 5px; user-select: none; }
-        .box { background: var(--box); padding: 12px; border-radius: 12px; border: 1px solid #333; max-width: 450px; margin: 8px auto; }
+        .box { background: var(--box); padding: 12px; border-radius: 12px; border: 1px solid var(--border); max-width: 450px; margin: 8px auto; }
         
-        /* Статус-бар */
-        .res-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; font-size: 12px; }
-        .res-item { background: #000; padding: 5px; border-radius: 6px; border: 1px solid #222; }
+        /* Статусы */
+        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; font-size: 11px; }
+        .res-item { background: #000; padding: 6px; border-radius: 6px; border: 1px solid #222; text-align: center; color: var(--gold); }
         
-        .bar-bg { width: 100%; height: 12px; background: #222; border-radius: 6px; margin: 5px 0; overflow: hidden; border: 1px solid #333; position: relative; }
-        .bar-fill { height: 100%; transition: 0.4s; }
-        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 9px; font-weight: bold; line-height: 12px; color: #fff; }
+        .bar-bg { width: 100%; height: 18px; background: #222; border-radius: 9px; margin: 6px 0; overflow: hidden; border: 1px solid #333; position: relative; }
+        .bar-fill { height: 100%; transition: width 0.4s ease; width: 0%; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; color: #fff; z-index: 2; }
 
-        /* Кнопки и Табы */
-        .btn { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; }
-        .btn:disabled { background: #333; color: #666; }
-        .tabs { display: flex; gap: 4px; overflow-x: auto; padding: 5px 0; }
-        .tab-btn { flex: 1; min-width: 80px; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; cursor: pointer; }
+        /* Действие (Проценты) */
+        #action-box { display: none; margin: 15px 0; }
+        .proc-bg { width: 100%; height: 24px; background: #000; border: 1px solid var(--gold); border-radius: 12px; overflow: hidden; position: relative; }
+        .proc-fill { height: 100%; background: var(--gold); width: 0%; transition: width 0.1s linear; }
+        .proc-text { position: absolute; width: 100%; text-align: center; line-height: 24px; font-size: 13px; color: #000; font-weight: bold; }
+
+        /* Интерфейс */
+        .btn { width: 100%; padding: 15px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 14px; }
+        .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+        
+        .tabs { display: flex; gap: 4px; margin: 10px 0; overflow-x: auto; }
+        .tab-btn { flex: 1; min-width: 80px; padding: 12px 5px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; }
         .tab-active { background: var(--gold); color: #000; font-weight: bold; }
 
-        /* Списки */
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 14px; }
-        #log { background: #000; border: 1px solid #222; padding: 10px; height: 80px; overflow-y: auto; font-size: 11px; text-align: left; color: #aaa; border-radius: 8px; margin-top: 10px; }
+        #log { background: #000; border: 1px solid #222; padding: 10px; height: 100px; overflow-y: auto; font-size: 12px; color: #aaa; border-radius: 8px; text-align: left; line-height: 1.4; }
+        .stat-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #222; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <h2 style="color: var(--gold); margin: 10px;">МИР ТЬМЫ</h2>
+    <h1 style="color: var(--gold); text-align: center;">МИР ТЬМЫ</h1>
     <div class="box">
-        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:85%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff;">
-        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:12px; background:#000; border:1px solid #444; color:#fff;">
-        <button class="btn" onclick="auth('login')">ВОЙТИ</button>
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:88%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff; border-radius:8px;">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:88%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff; border-radius:8px;">
+        <button class="btn" onclick="auth('login')">ВОЙТИ В МИР</button>
         <button class="btn" style="background:none; color:var(--gold); border:1px solid var(--gold);" onclick="auth('reg')">СОЗДАТЬ ГЕРОЯ</button>
     </div>
 </div>
@@ -52,134 +58,224 @@
     async function auth(mode) {
         const n = document.getElementById('u_nick').value.trim();
         const p = document.getElementById('u_pass').value.trim();
+        if(!n || !p) return alert("Введите логин и пароль!");
+
         if(mode === 'reg') {
-            await sb.from('users').insert({ id: crypto.randomUUID(), username: n, email_hidden: p, stamina: 100, gold: 50, inv: { pot_hp: 1 } });
-            alert("Герой создан!");
+            const { error } = await sb.from('users').insert({ 
+                username: n, email_hidden: p, 
+                current_hp: 100, stamina: 100, gold: 100, 
+                char_exp: 0, str: 5, vit: 5, int: 5, agi: 5,
+                last_seen: new Date().toISOString() 
+            });
+            if(!error) alert("Герой успешно создан!");
+            else alert("Имя уже занято тенью...");
         } else {
             const { data: u } = await sb.from('users').select('*').eq('username', n).single();
             if (u && u.email_hidden === p) {
-                user = n; data = u; localStorage.setItem('rpg_user', n); localStorage.setItem('rpg_pass', p);
-                renderGame(); setInterval(regen, 30000);
-            } else alert("Ошибка входа!");
+                user = n; data = u;
+                localStorage.setItem('rpg_user', n);
+                localStorage.setItem('rpg_pass', p);
+                processOfflineRegen();
+                renderGame();
+                setInterval(autoSave, 15000);
+                setInterval(regenTick, 2000);
+            } else alert("Тень не признала тебя.");
         }
+    }
+
+    function processOfflineRegen() {
+        const now = new Date();
+        const last = new Date(data.last_seen || now);
+        const diffSec = Math.floor((now - last) / 1000);
+        const regenAmt = Math.floor(diffSec / 15); // 1 ед в 15 сек
+        
+        const maxHp = 100 + (data.vit * 10);
+        const maxSt = 100 + (data.str * 5);
+
+        data.current_hp = Math.min(maxHp, (data.current_hp || 0) + regenAmt);
+        data.stamina = Math.min(maxSt, (data.stamina || 0) + regenAmt);
+        if(diffSec > 60) addLog(`Отсутствие: ${Math.floor(diffSec/60)} мин. Восстановлено ${regenAmt} ед.`);
     }
 
     function renderGame() {
         const maxHp = 100 + (data.vit * 10);
         const maxSt = 100 + (data.str * 5);
+        
         document.getElementById('game-container').innerHTML = `
             <div class="box">
-                <div class="res-row">
-                    <div class="res-item">💰 ${data.gold}</div>
+                <div class="res-grid">
+                    <div class="res-item">💰 ${Math.floor(data.gold)}</div>
                     <div class="res-item">🌲 ${data.wood || 0}</div>
-                    <div class="res-item">🪨 ${data.stone || 0}</div>
                     <div class="res-item">⛏️ ${data.iron || 0}</div>
-                    <div class="res-item">⬛ ${data.coal || 0}</div>
-                    <div class="res-item">🔱 ${data.steel_ingot || 0}</div>
                 </div>
-                <div class="bar-bg"><div class="bar-text">HP: ${data.current_hp}/${maxHp}</div><div class="bar-fill" style="width:${(data.current_hp/maxHp)*100}%; background:var(--hp)"></div></div>
-                <div class="bar-bg"><div class="bar-text">ST: ${data.stamina}/${maxSt}</div><div class="bar-fill" style="width:${(data.stamina/maxSt)*100}%; background:var(--st)"></div></div>
+                <div class="bar-bg">
+                    <div class="bar-text">❤️ ЗДОРОВЬЕ: ${Math.floor(data.current_hp)} / ${maxHp}</div>
+                    <div class="bar-fill" style="width:${(data.current_hp/maxHp)*100}%; background:var(--hp)"></div>
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-text">🔋 ВЫНОСЛИВОСТЬ: ${Math.floor(data.stamina)} / ${maxSt}</div>
+                    <div class="bar-fill" style="width:${(data.stamina/maxSt)*100}%; background:var(--st)"></div>
+                </div>
+                <div id="action-box">
+                    <div class="proc-bg">
+                        <div id="proc-fill" class="proc-fill"></div>
+                        <div id="proc-text" class="proc-text">0%</div>
+                    </div>
+                </div>
             </div>
 
             <div class="tabs">
                 <button class="tab-btn ${currentTab==='world'?'tab-active':''}" onclick="setTab('world')">МИР</button>
                 <button class="tab-btn ${currentTab==='mine'?'tab-active':''}" onclick="setTab('mine')">ДОБЫЧА</button>
                 <button class="tab-btn ${currentTab==='shop'?'tab-active':''}" onclick="setTab('shop')">МАГАЗИН</button>
-                <button class="tab-btn ${currentTab==='inv'?'tab-active':''}" onclick="setTab('inv')">ГЕРОЙ</button>
+                <button class="tab-btn ${currentTab==='hero'?'tab-active':''}" onclick="setTab('hero')">ГЕРОЙ</button>
             </div>
+
             <div id="tab-content">${renderTab()}</div>
-            <div id="log">Текущая локация: ${currentLoc}</div>
+            <div id="log">Локация: ${currentLoc}</div>
         `;
     }
 
     function renderTab() {
         if(currentTab === 'world') return `
             <div class="box">
-                <h3>ЛОКАЦИИ</h3>
-                <div class="list-item"><span>🌲 Дикий Лес</span> <button onclick="travel('Дикий Лес', 5)" class="tab-btn">ИДТИ (5с)</button></div>
-                <div class="list-item"><span>⛏️ Мрачная Шахта</span> <button onclick="travel('Шахта', 10)" class="tab-btn">ИДТИ (10с)</button></div>
-                <div class="list-item"><span>⚖️ Рынок</span> <button onclick="travel('Рынок', 3)" class="tab-btn">ИДТИ (3с)</button></div>
+                <button class="btn" onclick="startAction('travel', 'Лес', 6000)" ${isBusy?'disabled':''}>🌲 В ЛЕС (6 сек)</button>
+                <button class="btn" onclick="startAction('travel', 'Шахта', 10000)" ${isBusy?'disabled':''}>⛏️ В ШАХТУ (10 сек)</button>
+                <button class="btn" style="background:#333; color:#fff;" onclick="startAction('travel', 'Лагерь', 4000)" ${isBusy?'disabled':''}>🛖 В ЛАГЕРЬ</button>
             </div>`;
         
         if(currentTab === 'mine') {
-            if(currentLoc === 'Лагерь' || currentLoc === 'Рынок') return `<div class="box"><p>Здесь нечего добывать. Иди в Лес или Шахту!</p></div>`;
-            return `
-            <div class="box">
-                <h3>ДОБЫЧА: ${currentLoc}</h3>
-                <button class="btn" onclick="mine('wood')" ${isBusy?'disabled':''}>СОБИРАТЬ РЕСУРСЫ (-15 ST)</button>
-            </div>`;
+            if(currentLoc === 'Лагерь') return `<div class="box"><p>В лагере безопасно, но ресурсов нет. Иди в лес или шахту.</p></div>`;
+            let rName = currentLoc === 'Лес' ? 'Дерево' : 'Железо';
+            return `<div class="box"><h3>${currentLoc}</h3><button class="btn" onclick="startAction('mine', '${rName}', 5000)" ${isBusy?'disabled':''}>ДОБЫВАТЬ ${rName.toUpperCase()} (-20 ST)</button></div>`;
         }
 
         if(currentTab === 'shop') return `
             <div class="box">
-                <h3>МАГАЗИН</h3>
-                <div class="list-item"><span>🧪 Зелье HP (50💰)</span> <button onclick="buy('pot_hp', 50)" class="tab-btn">КУПИТЬ</button></div>
-                <div class="list-item"><span>⚡ Эликсир ST (40💰)</span> <button onclick="buy('pot_st', 40)" class="tab-btn">КУПИТЬ</button></div>
-                <hr>
-                <h3>ПРОДАЖА</h3>
-                <button class="btn" onclick="sellAll()" style="background:#444; color:#fff;">ПРОДАТЬ ВСЕ РЕСУРСЫ</button>
+                <div class="stat-row"><span>🧪 Зелье HP</span><button onclick="buy('hp')" class="tab-btn">50💰</button></div>
+                <div class="stat-row"><span>Продать всё дерево</span><button onclick="sell('wood', 5)" class="tab-btn">5💰/ед</button></div>
+                <div class="stat-row"><span>Продать всё железо</span><button onclick="sell('iron', 12)" class="tab-btn">12💰/ед</button></div>
             </div>`;
 
-        return `<div class="box"><h3>ИНВЕНТАРЬ</h3><p>Зелья HP: ${data.inv?.pot_hp || 0}</p><p>Зелья ST: ${data.inv?.pot_st || 0}</p><button class="btn" onclick="logout()">ВЫЙТИ</button></div>`;
+        return `<div class="box"><h3>ГЕРОЙ</h3><div class="stat-row"><span>Сила (ST):</span> <b>${data.str}</b></div><div class="stat-row"><span>Живучесть (HP):</span> <b>${data.vit}</b></div><button class="btn" onclick="logout()" style="background:red; color:#fff;">ВЫЙТИ</button></div>`;
     }
 
-    async function travel(name, time) {
+    function startAction(type, target, duration) {
         if(isBusy) return;
+        if(type === 'mine' && data.stamina < 20) return alert("Вы слишком устали!");
+
         isBusy = true; renderGame();
-        addLog(`Переход в ${name}...`);
-        setTimeout(() => {
-            currentLoc = name;
-            isBusy = false;
-            renderGame();
-            addLog(`Прибыл в ${name}`);
-        }, time * 1000);
+        const actionBox = document.getElementById('action-box');
+        const fill = document.getElementById('proc-fill');
+        const txt = document.getElementById('proc-text');
+        actionBox.style.display = 'block';
+
+        let start = Date.now();
+        let eventTriggered = false;
+
+        let interval = setInterval(() => {
+            let elapsed = Date.now() - start;
+            let percent = Math.min(100, Math.floor((elapsed / duration) * 100));
+            fill.style.width = percent + '%';
+            txt.innerText = percent + '%';
+
+            if (percent >= 50 && !eventTriggered && Math.random() < 0.2) {
+                eventTriggered = true;
+                handleRandomEvent(type);
+            }
+
+            if(elapsed >= duration) {
+                clearInterval(interval);
+                finishAction(type, target);
+            }
+        }, 100);
     }
 
-    async function mine(type) {
-        if(data.stamina < 15) return alert("Нет энергии!");
-        isBusy = true; renderGame();
-        setTimeout(async () => {
-            data.stamina -= 15;
-            let res = currentLoc === 'Дикий Лес' ? 'wood' : 'iron';
-            data[res] = (data[res] || 0) + 1;
-            await sb.from('users').update(data).eq('username', user);
-            isBusy = false; renderGame();
-            addLog(`Добыто: ${res}`);
-        }, 2000);
+    function handleRandomEvent(type) {
+        const roll = Math.random();
+        if(type === 'travel') {
+            if(roll < 0.5) {
+                const dmg = 10; data.current_hp -= dmg;
+                addLog(`⚔️ Засада! Получено ${dmg} урона!`, 'red');
+            } else {
+                const found = 20; data.gold += found;
+                addLog(`🎁 Найдено на дороге: +${found}💰`, 'green');
+            }
+        } else {
+            data.stamina -= 10;
+            addLog("⛏️ Тяжелая работа: -10 выносливости", 'orange');
+        }
+        renderGame();
     }
 
-    async function sellAll() {
-        let gain = (data.wood || 0) * 2 + (data.iron || 0) * 5;
-        if(gain === 0) return alert("Нечего продавать!");
-        data.gold += gain;
-        data.wood = 0; data.iron = 0;
+    async function finishAction(type, target) {
+        isBusy = false;
+        document.getElementById('action-box').style.display = 'none';
+        
+        if(type === 'travel') {
+            currentLoc = target;
+            addLog(`📍 Прибыл в: ${target}`);
+        } else {
+            data.stamina -= 20;
+            let key = target === 'Дерево' ? 'wood' : 'iron';
+            data[key] = (data[key] || 0) + 1;
+            addLog(`✅ Добыто: ${target} +1`);
+        }
+        renderGame();
+        autoSave();
+    }
+
+    async function buy(type) {
+        if(data.gold < 50) return alert("Нет золота!");
+        data.gold -= 50;
+        data.current_hp = Math.min(100 + (data.vit * 10), data.current_hp + 30);
+        addLog("🧪 Выпито зелье: +30 HP");
+        renderGame();
+    }
+
+    async function sell(res, price) {
+        const amt = data[res] || 0;
+        if(amt <= 0) return alert("Нечего продавать!");
+        data.gold += amt * price;
+        data[res] = 0;
+        addLog(`💰 Продано на ${amt * price} золота`);
+        renderGame();
+    }
+
+    function regenTick() {
+        if(isBusy) return;
+        const maxHp = 100 + (data.vit * 10);
+        const maxSt = 100 + (data.str * 5);
+        if(data.current_hp < maxHp) data.current_hp = Math.min(maxHp, data.current_hp + 0.3);
+        if(data.stamina < maxSt) data.stamina = Math.min(maxSt, data.stamina + 0.8);
+        renderGame();
+    }
+
+    async function autoSave() {
+        if(!user) return;
+        data.last_seen = new Date().toISOString();
         await sb.from('users').update(data).eq('username', user);
-        renderGame();
-        addLog(`Продано ресурсов на ${gain}💰`);
     }
 
-    async function buy(item, price) {
-        if(data.gold < price) return alert("Нет золота!");
-        data.gold -= price;
-        data.inv[item] = (data.inv[item] || 0) + 1;
-        await sb.from('users').update({ gold: data.gold, inv: data.inv }).eq('username', user);
-        renderGame();
+    function addLog(m, c) { 
+        const l = document.getElementById('log'); 
+        if(l) l.innerHTML = `<span style="color:${c || 'inherit'}">> ${m}</span><br>` + l.innerHTML; 
     }
-
-    function addLog(m) { const l = document.getElementById('log'); if(l) l.innerHTML = `> ${m}<br>` + l.innerHTML; }
-    function setTab(t) { currentTab = t; renderGame(); }
+    
+    function setTab(t) { if(!isBusy) { currentTab = t; renderGame(); } }
     function logout() { localStorage.clear(); location.reload(); }
-
-    async function regen() {
-        if(data.stamina < 100) data.stamina += 5;
-        if(user) { renderGame(); await sb.from('users').update({ stamina: data.stamina }).eq('username', user); }
-    }
 
     window.onload = async () => {
         const n = localStorage.getItem('rpg_user'), p = localStorage.getItem('rpg_pass');
         if(n && p) {
             const { data: u } = await sb.from('users').select('*').eq('username', n).single();
-            if(u && u.email_hidden === p) { user = n; data = u; renderGame(); setInterval(regen, 30000); }
+            if(u && u.email_hidden === p) { 
+                user = n; data = u; 
+                processOfflineRegen();
+                renderGame();
+                setInterval(autoSave, 15000);
+                setInterval(regenTick, 2000);
+            }
         }
     };
 </script>
