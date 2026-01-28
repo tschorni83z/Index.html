@@ -3,54 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>МИР ТЬМЫ: FINAL</title>
+    <title>TSCHORNI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0a0a0a; --box: #151515; }
-        body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 5px; user-select: none; }
-        .box { background: var(--box); padding: 10px; border-radius: 12px; border: 1px solid #333; max-width: 500px; margin: 5px auto; }
+        :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #000; --box: #1a1a1a; }
+        body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 10px; user-select: none; }
+        .box { background: var(--box); padding: 12px; border-radius: 12px; border: 1px solid #333; max-width: 500px; margin: 8px auto; }
         
-        /* Статусы */
-        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; font-size: 11px; }
-        .res-item { background: #000; padding: 5px; border-radius: 6px; border: 1px solid #222; text-align: center; color: var(--gold); }
+        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+        .res-item { background: #222; padding: 8px; border-radius: 8px; text-align: center; color: var(--gold); font-size: 13px; }
         
-        .bar-bg { width: 100%; height: 18px; background: #222; border-radius: 9px; margin: 4px 0; overflow: hidden; border: 1px solid #333; position: relative; }
-        .bar-fill { height: 100%; transition: width 0.5s ease-in-out; width: 0%; }
-        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; color: #fff; z-index: 2; text-shadow: 1px 1px #000; }
+        .bar-bg { width: 100%; height: 22px; background: #333; border-radius: 11px; margin: 6px 0; overflow: hidden; position: relative; border: 1px solid #444; }
+        .bar-fill { height: 100%; transition: width 0.5s; width: 0%; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 11px; font-weight: bold; line-height: 22px; color: #fff; z-index: 2; }
 
-        /* Действия */
+        .tabs { display: flex; gap: 5px; margin: 15px 0; }
+        .tab-btn { flex: 1; padding: 12px 5px; background: #333; border: none; color: #aaa; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .tab-active { background: var(--gold); color: #000; }
+
+        .btn { width: 100%; padding: 15px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+        
+        /* Чат и Онлайн */
+        .chat-container { display: flex; gap: 8px; height: 180px; }
+        .online-box { width: 100px; background: #111; border-radius: 8px; padding: 8px; font-size: 11px; border: 1px solid #333; overflow-y: auto; }
+        .chat-box { flex: 1; background: #111; border-radius: 8px; display: flex; flex-direction: column; border: 1px solid #333; }
+        #chat-msgs { flex: 1; overflow-y: auto; padding: 8px; font-size: 12px; text-align: left; }
+        #chat-in { background: #222; border: none; color: #fff; padding: 12px; border-radius: 0 0 8px 8px; outline: none; border-top: 1px solid #333; }
+
+        .loc-title { font-size: 10px; color: #666; text-transform: uppercase; margin-bottom: 5px; text-align: center; }
+
         #action-box { display: none; margin: 10px 0; }
-        .proc-bg { width: 100%; height: 20px; background: #000; border: 1px solid var(--gold); border-radius: 10px; overflow: hidden; position: relative; }
+        .proc-bg { width: 100%; height: 20px; background: #111; border-radius: 10px; overflow: hidden; border: 1px solid var(--gold); }
         .proc-fill { height: 100%; background: var(--gold); width: 0%; }
-        .proc-text { position: absolute; width: 100%; text-align: center; line-height: 20px; font-size: 11px; color: #000; font-weight: bold; }
-
-        /* Интерфейс */
-        .btn { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 12px; }
-        .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
-        .tabs { display: flex; gap: 4px; margin: 10px 0; }
-        .tab-btn { flex: 1; padding: 10px 2px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; cursor: pointer; }
-        .tab-active { background: var(--gold); color: #000; font-weight: bold; }
-
-        /* Чат */
-        .chat-container { display: flex; gap: 5px; height: 150px; margin-top: 10px; }
-        .online-list { width: 90px; background: #000; border: 1px solid #333; border-radius: 8px; font-size: 10px; padding: 5px; overflow-y: auto; color: #00ff88; text-align: left; }
-        .chat-box { flex: 1; background: #000; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; }
-        #chat-msgs { flex: 1; overflow-y: auto; padding: 5px; font-size: 11px; text-align: left; line-height: 1.3; }
-        #chat-in { background: none; border: none; border-top: 1px solid #333; color: #fff; padding: 8px; font-size: 12px; }
-
-        #log { background: #000; border: 1px solid #222; padding: 8px; height: 80px; overflow-y: auto; font-size: 11px; color: #aaa; border-radius: 8px; text-align: left; margin-top: 10px; }
-        .time { color: #555; margin-right: 5px; }
+        #log { background: #111; padding: 10px; height: 80px; overflow-y: auto; font-size: 11px; color: #888; border-radius: 8px; margin-top: 10px; border: 1px solid #222; text-align: left; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <h1 style="color: var(--gold); text-align: center;">МИР ТЬМЫ</h1>
+<div id="game-ui" style="display: none;">
     <div class="box">
-        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:85%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff; border-radius:8px;">
-        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff; border-radius:8px;">
-        <button class="btn" onclick="auth('login')">ВОЙТИ</button>
-        <button class="btn" style="background:none; color:var(--gold); border:1px solid var(--gold);" onclick="auth('reg')">РЕГИСТРАЦИЯ</button>
+        <div class="res-grid">
+            <div class="res-item">💰 <span id="res-gold">0</span></div>
+            <div class="res-item">🌲 <span id="res-wood">0</span></div>
+            <div class="res-item">⛏️ <span id="res-iron">0</span></div>
+        </div>
+        <div class="bar-bg">
+            <div class="bar-text" id="hp-text">HP: 0 / 0</div>
+            <div id="hp-fill" class="bar-fill" style="background: var(--hp);"></div>
+        </div>
+        <div class="bar-bg">
+            <div class="bar-text" id="st-text">ST: 0 / 0</div>
+            <div id="st-fill" class="bar-fill" style="background: var(--st);"></div>
+        </div>
+        <div id="action-box"><div class="proc-bg"><div id="proc-fill" class="proc-fill"></div></div></div>
+    </div>
+
+    <div class="tabs">
+        <button id="t-world" class="tab-btn tab-active" onclick="setTab('world')">МИР</button>
+        <button id="t-mine" class="tab-btn" onclick="setTab('mine')">ДОБЫЧА</button>
+        <button id="t-hero" class="tab-btn" onclick="setTab('hero')">ГЕРОЙ</button>
+        <button id="t-shop" class="tab-btn" onclick="setTab('shop')">РЫНОК</button>
+    </div>
+
+    <div id="tab-content"></div>
+
+    <div class="box chat-container">
+        <div class="online-box">
+            <div class="loc-title">Локация</div>
+            <div id="cur-loc-name" style="color: var(--gold); font-weight: bold; margin-bottom: 10px; text-align: center; font-size: 10px;">-</div>
+            <div class="loc-title">Здесь</div>
+            <div id="online-list"></div>
+        </div>
+        <div class="chat-box">
+            <div id="chat-msgs"></div>
+            <input type="text" id="chat-in" placeholder="Написать в чат..." onkeypress="if(event.key==='Enter') sendChat()">
+        </div>
+    </div>
+    <div id="log"></div>
+</div>
+
+<div id="auth-ui">
+    <h1 style="text-align: center; color: #fff; letter-spacing: 5px;">TSCHORNI</h1>
+    <div class="box">
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:90%; padding:15px; margin:5px; background:#111; border:1px solid #333; color:#fff; border-radius:8px;">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:90%; padding:15px; margin:5px; background:#111; border:1px solid #333; color:#fff; border-radius:8px;">
+        <button class="btn" onclick="auth('login')">ИГРАТЬ</button>
+        <button class="btn" onclick="auth('reg')" style="background:none; color:var(--gold); border:1px solid var(--gold);">РЕГИСТРАЦИЯ</button>
     </div>
 </div>
 
@@ -59,218 +97,170 @@
     const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
     const sb = window.supabase.createClient(S_URL, S_KEY);
 
-    let user = null, data = {}, isBusy = false, currentTab = 'world', currentLoc = 'Лагерь';
+    let user = null, data = {}, currentTab = 'world', isBusy = false;
 
-    // Вход и Регистрация
     async function auth(mode) {
         const n = document.getElementById('u_nick').value.trim();
         const p = document.getElementById('u_pass').value.trim();
         if(!n || !p) return;
-
         if(mode === 'reg') {
-            const { error } = await sb.from('users').insert({ 
-                username: n, email_hidden: p, current_hp: 100, stamina: 100, gold: 100, 
-                str: 5, vit: 5, agi: 5, int: 5, wood: 0, iron: 0, coal: 0,
-                equip: { helmet: "Нет", body: "Ткань", weapon: "Кулаки", tool: "Кирка" },
-                location: 'Лагерь', last_seen: new Date().toISOString() 
-            });
-            if(!error) alert("Герой создан! Теперь войдите.");
-            else alert("Имя занято.");
+            await sb.from('users').insert({ username: n, email_hidden: p, current_hp: 150, stamina: 125, gold: 100, str: 5, vit: 5, wood: 0, iron: 0, coal: 0, location: 'Лагерь', equip: { helmet: "Нет", body: "Ткань", weapon: "Кулаки" } });
+            alert("Готово! Войдите.");
         } else {
-            const { data: u, error } = await sb.from('users').select('*').eq('username', n).single();
-            if (u && u.email_hidden === p) {
+            const { data: u } = await sb.from('users').select('*').eq('username', n).single();
+            if(u && u.email_hidden === p) {
                 user = n; data = u;
-                localStorage.setItem('rpg_nick', n);
-                localStorage.setItem('rpg_pass', p);
-                startGame();
-            } else alert("Неверный логин или пароль.");
+                document.getElementById('auth-ui').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
+                startApp();
+            } else alert("Ошибка!");
         }
     }
 
-    function startGame() {
-        renderGame();
+    function startApp() {
+        updateBars();
+        setTab('world');
+        setInterval(regen, 2000);
+        setInterval(save, 5000); // Сохраняем чаще, чтобы не терять ST
+        setInterval(updateOnline, 5000); // Обновляем список игроков
         initChat();
-        setInterval(autoSave, 10000); 
-        setInterval(regenTick, 2000);
-        setInterval(updateOnline, 5000);
     }
 
-    function renderGame() {
-        if(!user) return;
-        const mHp = 100 + (parseInt(data.vit || 5) * 10);
-        const mSt = 100 + (parseInt(data.str || 5) * 5);
-        const curHp = Math.max(0, parseFloat(data.current_hp || 0));
-        const curSt = Math.max(0, parseFloat(data.stamina || 0));
-
-        document.getElementById('game-container').innerHTML = `
-            <div class="box">
-                <div class="res-grid">
-                    <div class="res-item">💰 ${Math.floor(data.gold || 0)}</div>
-                    <div class="res-item">🌲 ${data.wood||0}</div>
-                    <div class="res-item">⛏️ ${data.iron||0}</div>
-                    <div class="res-item">⬛ ${data.coal||0}</div>
-                    <div class="res-item">📍 ${currentLoc}</div>
-                </div>
-                <div class="bar-bg"><div class="bar-text">❤️ HP: ${Math.floor(curHp)} / ${mHp}</div><div class="bar-fill" style="width:${(curHp/mHp)*100}%; background:var(--hp)"></div></div>
-                <div class="bar-bg"><div class="bar-text">🔋 ST: ${Math.floor(curSt)} / ${mSt}</div><div class="bar-fill" style="width:${(curSt/mSt)*100}%; background:var(--st)"></div></div>
-                <div id="action-box"><div class="proc-bg"><div id="proc-fill" class="proc-fill"></div><div id="proc-text" class="proc-text">0%</div></div></div>
-            </div>
-
-            <div class="tabs">
-                <button class="tab-btn ${currentTab==='world'?'tab-active':''}" onclick="setTab('world')">МИР</button>
-                <button class="tab-btn ${currentTab==='mine'?'tab-active':''}" onclick="setTab('mine')">ДОБЫЧА</button>
-                <button class="tab-btn ${currentTab==='hero'?'tab-active':''}" onclick="setTab('hero')">ГЕРОЙ</button>
-                <button class="tab-btn ${currentTab==='shop'?'tab-active':''}" onclick="setTab('shop')">РЫНОК</button>
-            </div>
-            <div id="tab-content">${renderTabContent()}</div>
-
-            <div class="box chat-container">
-                <div class="online-list" id="online-list">...</div>
-                <div class="chat-box">
-                    <div id="chat-msgs"></div>
-                    <input type="text" id="chat-in" placeholder="Чат..." onkeypress="if(event.key==='Enter') sendChat()">
-                </div>
-            </div>
-            <div id="log"></div>
-            <button onclick="logout()" style="color: grey; background: none; border: none; font-size: 10px; margin-top: 10px;">Сменить персонажа</button>
-        `;
+    function updateBars() {
+        const mHp = 100 + (data.vit * 10);
+        const mSt = 100 + (data.str * 5);
+        document.getElementById('hp-text').innerText = `HP: ${Math.floor(data.current_hp)} / ${mHp}`;
+        document.getElementById('hp-fill').style.width = (data.current_hp / mHp * 100) + '%';
+        document.getElementById('st-text').innerText = `ST: ${Math.floor(data.stamina)} / ${mSt}`;
+        document.getElementById('st-fill').style.width = (data.stamina / mSt * 100) + '%';
+        
+        document.getElementById('res-gold').innerText = Math.floor(data.gold);
+        document.getElementById('res-wood').innerText = data.wood;
+        document.getElementById('res-iron').innerText = data.iron;
+        document.getElementById('cur-loc-name').innerText = data.location;
     }
 
-    function renderTabContent() {
-        if(currentTab === 'world') return `
-            <div class="box">
-                <button class="btn" onclick="startAction('travel', 'Лес', 5000)">🌲 В ЛЕС (5с)</button>
-                <button class="btn" onclick="startAction('travel', 'Шахта', 8000)">⛏️ В ШАХТУ (8с)</button>
-                <button class="btn" onclick="startAction('travel', 'Лагерь', 3000)" style="background:#444; color:#fff;">🛖 В ЛАГЕРЬ</button>
+    function setTab(t) {
+        currentTab = t;
+        const tabs = ['world', 'mine', 'hero', 'shop'];
+        tabs.forEach(id => document.getElementById('t-'+id).className = 'tab-btn');
+        document.getElementById('t-'+t).className = 'tab-btn tab-active';
+        
+        let html = '';
+        if(t === 'world') {
+            html = `<div class="box">
+                <button class="btn" onclick="action('travel', 'Лес', 5000)">🌲 В ЛЕС (5с)</button>
+                <button class="btn" onclick="action('travel', 'Шахта', 8000)">⛏️ В ШАХТУ (8с)</button>
+                <button class="btn" onclick="action('travel', 'Лагерь', 3000)" style="background:#444; color:#fff;">🛖 В ЛАГЕРЬ</button>
             </div>`;
-        if(currentTab === 'mine') return `
-            <div class="box">
-                ${currentLoc==='Лагерь'?'<p>Здесь нечего добывать.</p>':`<button class="btn" onclick="startAction('mine', '${currentLoc}', 4000)">ДОБЫВАТЬ (-20 ST)</button>`}
+        } else if(t === 'mine') {
+            html = `<div class="box">
+                ${data.location === 'Лагерь' ? '<p style="text-align:center">В Лагере нет ресурсов для добычи.</p>' : `<button class="btn" onclick="action('mine', '${data.location}', 4000)">НАЧАТЬ ДОБЫЧУ (-20 ST)</button>`}
             </div>`;
-        if(currentTab === 'hero') return `
-            <div class="box" style="text-align: left;">
-                <h3>${user}</h3>
-                <p>💪 Сила: ${data.str} | 🎯 Ловкость: ${data.agi}</p>
-                <p>🧠 Интеллект: ${data.int} | 🩸 Живучесть: ${data.vit}</p>
-                <hr border="0" style="border-top: 1px solid #333">
-                <p>🪖 Шлем: ${data.equip.helmet}</p>
-                <p>🧥 Броня: ${data.equip.body}</p>
+        } else if(t === 'hero') {
+            html = `<div class="box" style="text-align:left">
+                <p><b>ГЕРОЙ:</b> ${user}</p>
+                <p>💪 Сила: ${data.str} | 🩸 Живучесть: ${data.vit}</p>
+                <hr style="border:0; border-top:1px solid #333">
+                <p>🛡️ Броня: ${data.equip.body}</p>
                 <p>⚔️ Оружие: ${data.equip.weapon}</p>
             </div>`;
-        if(currentTab === 'shop') return `
-            <div class="box">
-                <button class="btn" onclick="sellItem('wood', 3)">Продать Дерево (3💰)</button>
-                <button class="btn" onclick="sellItem('iron', 10)">Продать Железо (10💰)</button>
-                <button class="btn" onclick="buyItem('hp', 50)">Купить Зелье HP (50💰)</button>
+        } else if(t === 'shop') {
+            html = `<div class="box">
+                <p style="font-size:12px; color:#888; margin-bottom:10px;">Продажа всех ресурсов торговцу:</p>
+                <button class="btn" onclick="sell()">ПРОДАТЬ ВСЁ</button>
             </div>`;
+        }
+        document.getElementById('tab-content').innerHTML = html;
     }
 
-    // Логика действий
-    function startAction(type, target, duration) {
-        if(isBusy || (type==='mine' && data.stamina < 20)) return;
-        isBusy = true; renderGame();
+    function action(type, target, time) {
+        if(isBusy || (type === 'mine' && data.stamina < 20)) return;
+        isBusy = true;
         document.getElementById('action-box').style.display = 'block';
         let start = Date.now();
-        let interval = setInterval(() => {
-            let elapsed = Date.now() - start;
-            let percent = Math.min(100, Math.floor((elapsed / duration) * 100));
-            document.getElementById('proc-fill').style.width = percent + '%';
-            document.getElementById('proc-text').innerText = percent + '%';
-            if(elapsed >= duration) {
-                clearInterval(interval);
+        let timer = setInterval(() => {
+            let p = (Date.now() - start) / time * 100;
+            document.getElementById('proc-fill').style.width = Math.min(100, p) + '%';
+            if(p >= 100) {
+                clearInterval(timer);
                 isBusy = false;
-                if(type === 'travel') { currentLoc = target; addLog(`📍 Вы прибыли в ${target}`); }
-                else { 
-                    data.stamina -= 20; 
-                    let res = currentLoc === 'Лес' ? 'wood' : 'iron';
-                    data[res] = (parseInt(data[res]) || 0) + 1;
-                    addLog(`✅ Добыто: ${res} +1`);
+                document.getElementById('action-box').style.display = 'none';
+                if(type === 'travel') {
+                    data.location = target;
+                    addLog(`Вы перешли в локацию: ${target}`);
+                } else {
+                    data.stamina -= 20;
+                    let r = data.location === 'Лес' ? 'wood' : 'iron';
+                    data[r]++;
+                    addLog(`Добыт ресурс: ${r} +1`);
                 }
-                autoSave(); renderGame();
+                updateBars();
+                setTab(currentTab);
+                updateOnline();
             }
-        }, 100);
+        }, 50);
     }
 
-    // Рынок
-    async function sellItem(res, price) {
-        if(data[res] > 0) {
-            data[res]--;
-            data.gold = (parseInt(data.gold) || 0) + price;
-            addLog(`💰 Продано ${res} за ${price} золота.`);
-            await autoSave();
-            renderGame();
-        }
+    function regen() {
+        if(isBusy) return;
+        const mSt = 100 + (data.str * 5);
+        const mHp = 100 + (data.vit * 10);
+        if(data.stamina < mSt) data.stamina = Math.min(mSt, data.stamina + 2);
+        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, data.current_hp + 1);
+        updateBars();
     }
 
-    async function buyItem(type, cost) {
-        if(data.gold >= cost) {
-            data.gold -= cost;
-            if(type === 'hp') data.current_hp = Math.min(100+(data.vit*10), data.current_hp+30);
-            await autoSave();
-            renderGame();
-            addLog(`🧪 Использовано зелье.`);
-        }
-    }
-
-    // Системные функции
-    function regenTick() {
-        if(isBusy || !user) return;
-        const mHp = 100 + (parseInt(data.vit || 5) * 10);
-        const mSt = 100 + (parseInt(data.str || 5) * 5);
-        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, parseFloat(data.current_hp) + 0.5);
-        if(data.stamina < mSt) data.stamina = Math.min(mSt, parseFloat(data.stamina) + 1.2);
-        renderGame();
-    }
-
-    async function autoSave() {
+    async function save() {
         if(!user) return;
-        data.location = currentLoc;
         data.last_seen = new Date().toISOString();
         await sb.from('users').update(data).eq('username', user);
     }
 
-    // Чат и Онлайн
-    async function initChat() {
-        sb.channel('global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
-            const box = document.getElementById('chat-msgs');
-            if(box) {
-                box.innerHTML += `<div><b>${p.new.user}:</b> ${p.new.text}</div>`;
-                box.scrollTop = box.scrollHeight;
-            }
-        }).subscribe();
-    }
-
-    async function sendChat() {
-        const inp = document.getElementById('chat-in');
-        if(!inp.value.trim()) return;
-        await sb.from('messages').insert({ user: user, text: inp.value });
-        inp.value = '';
-    }
-
     async function updateOnline() {
         const { data: users } = await sb.from('users').select('username, location, last_seen');
-        const list = document.getElementById('online-list');
-        if(!list) return;
+        if(!users) return;
         const now = new Date();
-        const active = users.filter(u => (now - new Date(u.last_seen)) < 30000);
-        list.innerHTML = `<b>ОНЛАЙН:</b><br>` + active.map(u => u.username === user ? `<u>${u.username}</u>` : u.username).join('<br>');
+        const active = users.filter(u => u.location === data.location && (now - new Date(u.last_seen)) < 30000);
+        
+        const list = document.getElementById('online-list');
+        list.innerHTML = active.map(u => {
+            const isMe = u.username === user;
+            return `<div style="color: ${isMe ? 'var(--st)' : '#ccc'}; margin-bottom:3px;">
+                ${u.username} ${isMe ? '<b>(ВЫ)</b>' : ''}
+            </div>`;
+        }).join('');
+    }
+
+    async function sell() {
+        let money = (data.wood * 5) + (data.iron * 15);
+        if(money === 0) return addLog("У вас нет ресурсов для продажи!");
+        data.gold += money;
+        data.wood = 0; data.iron = 0;
+        updateBars();
+        addLog(`Торговец купил ваши ресурсы за ${money}💰`);
+        save();
     }
 
     function addLog(m) {
         const l = document.getElementById('log');
-        if(l) l.innerHTML = `<div><span class="time">[${new Date().toLocaleTimeString()}]</span> ${m}</div>` + l.innerHTML;
+        l.innerHTML = `<div><span style="color:#555">${new Date().toLocaleTimeString()}</span> ${m}</div>` + l.innerHTML;
     }
 
-    function setTab(t) { currentTab = t; renderGame(); }
-    function logout() { localStorage.clear(); location.reload(); }
+    async function initChat() {
+        sb.channel('chat_main').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
+            const cm = document.getElementById('chat-msgs');
+            cm.innerHTML += `<div><span style="color:#666">${new Date(p.new.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span> <b>${p.new.user}:</b> ${p.new.text}</div>`;
+            cm.scrollTop = cm.scrollHeight;
+        }).subscribe();
+    }
 
-    window.onload = async () => {
-        const n = localStorage.getItem('rpg_nick'), p = localStorage.getItem('rpg_pass');
-        if(n && p) {
-            const { data: u } = await sb.from('users').select('*').eq('username', n).single();
-            if(u && u.email_hidden === p) { user = n; data = u; startGame(); }
-        }
-    };
+    async function sendChat() {
+        const ci = document.getElementById('chat-in');
+        if(!ci.value.trim()) return;
+        await sb.from('messages').insert({ user: user, text: ci.value });
+        ci.value = '';
+    }
 </script>
 </body>
 </html>
