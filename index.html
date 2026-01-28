@@ -6,242 +6,240 @@
     <title>TSCHORNI GAME ONLINE</title>
     <style>
         :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --stamina: #9b59b6; --border: #333; }
-        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 100px; user-select: none; }
+        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 100px; }
         
+        /* Экран логина */
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .auth-form { background: var(--panel); padding: 20px; border-radius: 10px; border: 1px solid var(--gold); width: 100%; max-width: 300px; }
+        .auth-form input { width: 100%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; box-sizing: border-box; }
+
         .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
-        .game-title { text-align: center; color: var(--gold); font-size: 14px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
-        
         .bar-bg { height: 12px; background: #222; border-radius: 6px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
-        .fill { height: 100%; transition: 0.3s; width: 100%; }
+        .fill { height: 100%; transition: 0.3s; width: 0%; }
         .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 9px; line-height: 12px; font-weight: bold; color: #fff; z-index: 2; }
         
         .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
         .screen { display: none; } .active { display: block; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 12px; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        button { padding: 12px; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 5px; font-size: 11px; cursor: pointer; }
+        button:active { transform: scale(0.98); background: #333; }
 
-        #log, #chat-box { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; border: 1px solid var(--border); margin-bottom: 5px; }
-        #chat-box { color: #3498db; height: 80px; }
-        .chat-input-area { display: flex; gap: 5px; margin-bottom: 10px; }
-        .chat-input-area input { flex: 1; background: #111; border: 1px solid #444; color: #fff; padding: 5px; border-radius: 4px; }
-
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 60px; z-index: 1000; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; cursor: pointer; }
-        .nav-item.active { color: var(--gold); background: #111; border-top: 2px solid var(--gold); }
-
-        .item-card { background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        #log, #chat-box { height: 90px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; border: 1px solid var(--border); margin-bottom: 5px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 60px; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; }
+        .nav-item.active { color: var(--gold); }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="game-title">TSCHORNI GAME ONLINE</div>
-        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--gold); margin-bottom:4px;">
-            <b id="ui-nick">---</b>
-            <b>💰 <span id="gold">0</span></b>
-        </div>
-        <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
-        <div class="bar-bg"><div class="bar-txt">💪 STAMINA: <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
-        <div style="text-align:center; font-size:9px;">Level: <span id="ui-lvl">1</span> | Points: <b id="ui-pts" style="color:var(--green)">0</b></div>
-    </div>
-
-    <div class="content" style="padding:10px;">
-        <div id="chat-box">Загрузка чата...</div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Написать в чат...">
-            <button onclick="sendChat()" style="padding:5px 10px;">💬</button>
-        </div>
-        <div id="log"></div>
-
-        <div id="scr-town" class="screen">
-            <div class="panel">
-                <div class="grid">
-                    <button onclick="move('shop')">⚖️ Магазин</button>
-                    <button onclick="move('craft')">⚒️ Кузница</button>
-                    <button onclick="move('hospital')">🏥 Больница</button>
-                    <button onclick="move('world')">🧭 Выход</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="scr-world" class="screen">
-            <h4 style="text-align:center;">🗺️ Выбор локации</h4>
-            <div id="loc-list" class="grid"></div>
-            <button style="width:100%; margin-top:15px; background:var(--red);" onclick="hunt()">⚔️ ИСКАТЬ МОНСТРА</button>
-            <button style="width:100%; margin-top:10px;" onclick="move('town')">🏃 В город</button>
-        </div>
-
-        <div id="scr-battle" class="screen">
-            <div class="panel" style="text-align:center;">
-                <h3 id="en-name">Враг</h3>
-                <div id="en-img" style="font-size:50px;">👾</div>
-                <div class="bar-bg"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
-                <div class="grid" style="margin-top:15px;">
-                    <button onclick="battleHit()" style="background:var(--red); height:50px;">УДАРИТЬ</button>
-                    <button onclick="flee()">СБЕЖАТЬ</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="scr-char" class="screen">
-            <div class="panel">
-                <h4 style="color:var(--gold)">👤 Характеристики</h4>
-                <div id="stat-list"></div>
-                <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
-                <h4 style="color:var(--gold)">🎒 Ресурсы</h4>
-                <div id="res-list"></div>
-            </div>
-        </div>
-
-        <div id="scr-craft" class="screen panel">
-            <h4 style="text-align:center;">⚒️ Кузница</h4>
-            <div id="craft-items"></div>
-            <button style="width:100%; margin-top:10px;" onclick="move('town')">Назад</button>
+    <div id="auth-screen">
+        <div class="auth-form">
+            <h2 style="color:var(--gold); text-align:center; margin-top:0;">TSCHORNI GAME</h2>
+            <label>Имя персонажа:</label>
+            <input type="text" id="login-name" placeholder="Введите ник...">
+            <button onclick="login()" style="width:100%; background:var(--gold); color:#000;">ВОЙТИ В ИГРУ</button>
         </div>
     </div>
 
-    <div class="nav-bar">
-        <div id="n-town" class="nav-item" onclick="move('town')">🏙️<br>Город</div>
-        <div id="n-world" class="nav-item" onclick="move('world')">🗺️<br>Мир</div>
-        <div id="n-char" class="nav-item" onclick="move('char')">👤<br>Герой</div>
+    <div id="game-ui" style="display:none;">
+        <div class="header">
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--gold); margin-bottom:4px;">
+                <b id="ui-nick">---</b>
+                <b>💰 <span id="gold">0</span></b>
+            </div>
+            <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
+            <div class="bar-bg"><div class="bar-txt">💪 STAMINA: <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
+        </div>
+
+        <div class="content" style="padding:10px;">
+            <div id="chat-box"></div>
+            <div id="log"></div>
+
+            <div id="scr-town" class="screen">
+                <div class="panel">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <button onclick="move('world')">⚔️ ОХОТА</button>
+                        <button onclick="move('char')">👤 ГЕРОЙ</button>
+                        <button onclick="logout()">🏃 ВЫХОД</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scr-world" class="screen">
+                <button style="width:100%; height:50px; background:var(--red);" onclick="hunt()">НАЙТИ МОНСТРА</button>
+                <button style="width:100%; margin-top:10px;" onclick="move('town')">В ГОРОД</button>
+            </div>
+
+            <div id="scr-battle" class="screen">
+                <div class="panel" style="text-align:center;">
+                    <h3 id="en-name">Враг</h3>
+                    <div class="bar-bg"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
+                    <button onclick="battleHit()" style="width:100%; height:50px; background:var(--red); margin-top:10px;">УДАРИТЬ</button>
+                </div>
+            </div>
+
+            <div id="scr-char" class="screen">
+                <div class="panel" id="stat-info"></div>
+            </div>
+        </div>
+
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="move('town')">🏙️<br>Город</div>
+            <div class="nav-item" onclick="move('world')">🗺️<br>Мир</div>
+            <div class="nav-item" onclick="move('char')">👤<br>Герой</div>
+        </div>
     </div>
 
     <script>
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
 
-        let p = JSON.parse(localStorage.getItem('save_tschorni_v2')) || {
-            username: "Игрок_" + Math.floor(Math.random()*999), hp:100, st:100, gold:100, exp:0, lvl:1, points:5,
-            str:5, agi:5, vit:5, int:5, loc: 'town',
-            res: {fang:0, scale:0}, enemy: null
-        };
+        let p = null;
+        let lastInactivityCheck = Date.now();
 
-        const worldMap = {
-            'forest': { n:'Опушка', minLvl:0, mobs:[{n:'Крыса', i:'🐀', hp:40, dmg:5, exp:20, g:10, drop:'fang', chance:0.4}] },
-            'cave': { n:'Пещера', minLvl:3, mobs:[{n:'Орк', i:'👹', hp:150, dmg:15, exp:60, g:25, drop:'scale', chance:0.2}] }
-        };
+        // 1. ЛОГИН И ЗАГРУЗКА
+        async function login() {
+            const nick = document.getElementById('login-name').value.trim();
+            if(!nick) return alert("Введите имя!");
 
-        function addLog(m) {
-            const l = document.getElementById('log');
-            l.innerHTML += `<div><span style="color:#555">[${new Date().toLocaleTimeString()}]</span> ${m}</div>`;
-            l.scrollTop = l.scrollHeight;
-        }
+            // Ищем игрока в БД
+            const res = await fetch(`${SB_URL}/rest/v1/users?username=eq.${nick}`, {
+                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
+            });
+            const data = await res.json();
 
-        async function sendChat() {
-            const input = document.getElementById('chat-input');
-            if(!input.value) return;
-            const msg = `${p.username}: ${input.value}`;
-            input.value = '';
+            if(data.length > 0) {
+                p = data[0].save_data;
+            } else {
+                // Создаем нового
+                p = {
+                    username: nick, hp:100, st:100, gold:100, exp:0, lvl:1, points:5,
+                    str:5, agi:5, vit:5, int:5, loc: 'town', last_save: Date.now()
+                };
+            }
+
+            calculateOfflineGain();
+            startInactivityTimer();
             
-            try {
-                await fetch(`${SB_URL}/rest/v1/messages`, {
-                    method: 'POST',
-                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: msg })
-                });
-                loadChat();
-            } catch(e) { addLog("Ошибка чата"); }
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            move(p.loc || 'town');
+            updateUI();
+            addLog(`Приветствуем, ${p.username}!`);
         }
 
-        async function loadChat() {
-            try {
-                const res = await fetch(`${SB_URL}/rest/v1/messages?order=created_at.desc&limit=5`, {
-                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
-                });
-                const data = await res.json();
-                document.getElementById('chat-box').innerHTML = data.reverse().map(m => `<div>${m.text}</div>`).join('');
-            } catch(e) {}
+        // 2. ОФФЛАЙН ВОССТАНОВЛЕНИЕ
+        function calculateOfflineGain() {
+            const now = Date.now();
+            const diff = Math.floor((now - (p.last_save || now)) / 1000); // секунд оффлайна
+            
+            if(diff > 5) {
+                let maxHp = 100 + (p.vit * 20);
+                let hpGain = Math.floor(diff / 10); // +1 HP за 10 сек
+                let stGain = Math.floor(diff / 5);  // +1 Стамина за 5 сек
+                
+                p.hp = Math.min(maxHp, p.hp + hpGain);
+                p.st = Math.min(100, p.st + stGain);
+                addLog(`За время отсутствия восстановлено: ${hpGain} HP и ${stGain} Стамины.`);
+            }
+        }
+
+        // 3. ТАЙМЕР БЕЗДЕЙСТВИЯ (1 ЧАС)
+        function startInactivityTimer() {
+            document.addEventListener('touchstart', resetTimer);
+            document.addEventListener('click', resetTimer);
+        }
+
+        function resetTimer() {
+            lastInactivityCheck = Date.now();
+        }
+
+        setInterval(() => {
+            const passed = Date.now() - lastInactivityCheck;
+            if(passed > 3600000) { // 1 час
+                alert("Вы вышли из игры из-за бездействия.");
+                logout();
+            }
+        }, 60000); // проверка каждую минуту
+
+        function logout() {
+            save();
+            location.reload();
+        }
+
+        // 4. ГЕЙМПЛЕЙ
+        function updateUI() {
+            if(!p) return;
+            let maxHp = 100 + (p.vit * 20);
+            if(maxHp <= 0) maxHp = 100; // защита от 0/0
+
+            document.getElementById('ui-nick').innerText = p.username;
+            document.getElementById('gold').innerText = Math.floor(p.gold);
+            
+            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
+            document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
+            
+            document.getElementById('st-val').innerText = `${Math.floor(p.st)}/100`;
+            document.getElementById('st-fill').style.width = p.st+'%';
         }
 
         function move(scr) {
-            if(p.enemy && scr !== 'battle') return addLog("⚔️ Вы в бою!");
+            p.loc = scr;
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('scr-'+scr).classList.add('active');
-            if(document.getElementById('n-'+scr)) document.getElementById('n-'+scr).classList.add('active');
-            
             if(scr === 'char') renderChar();
-            if(scr === 'world') renderWorld();
-            if(scr === 'craft') renderCraft();
             updateUI();
             save();
         }
 
-        function renderWorld() {
-            const list = document.getElementById('loc-list');
-            list.innerHTML = '';
-            for(let id in worldMap) {
-                const loc = worldMap[id];
-                list.innerHTML += `<button onclick="p.loc='${id}'; addLog('Вы перешли: ${loc.n}')" ${p.lvl < loc.minLvl ? 'disabled' : ''}>${loc.n} (Lvl ${loc.minLvl})</button>`;
-            }
-        }
-
         function renderChar() {
-            const sl = document.getElementById('stat-list');
-            sl.innerHTML = `<div>Сила: ${p.str} <button onclick="addStat('str')">+</button></div>
-                            <div>Ловкость: ${p.agi} <button onclick="addStat('agi')">+</button></div>
-                            <div>Живучесть: ${p.vit} <button onclick="addStat('vit')">+</button></div>`;
-            document.getElementById('res-list').innerHTML = `Клыки: ${p.res.fang} | Чешуя: ${p.res.scale}`;
-            document.getElementById('ui-pts').innerText = p.points;
+            document.getElementById('stat-info').innerHTML = `
+                <h3>${p.username} (${p.lvl} уровень)</h3>
+                <p>Сила: ${p.str}</p>
+                <p>Живучесть: ${p.vit}</p>
+                <p>Золото: ${p.gold}</p>
+            `;
         }
 
-        function addStat(s) {
-            if(p.points > 0) { p[s]++; p.points--; renderChar(); updateUI(); save(); }
+        function addLog(m) {
+            const l = document.getElementById('log');
+            l.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${m}</div>`;
+            l.scrollTop = l.scrollHeight;
         }
 
-        function hunt() {
-            const loc = worldMap[p.loc] || worldMap.forest;
-            const m = loc.mobs[0];
-            p.enemy = { ...m, curHp: m.hp };
-            move('battle');
+        async function save() {
+            if(!p) return;
+            p.last_save = Date.now();
+            localStorage.setItem('tschorni_player', JSON.stringify(p));
+            
+            // Сохранение в Supabase (Upsert)
+            try {
+                await fetch(`${SB_URL}/rest/v1/users`, {
+                    method: 'POST',
+                    headers: { 
+                        "apikey": SB_KEY, 
+                        "Authorization": `Bearer ${SB_KEY}`, 
+                        "Content-Type": "application/json",
+                        "Prefer": "resolution=merge-duplicates" 
+                    },
+                    body: JSON.stringify({ username: p.username, save_data: p })
+                });
+            } catch(e) {}
         }
 
-        function battleHit() {
-            if(!p.enemy) return;
-            let dmg = (p.st >= 10) ? (p.str + 5) : 2;
-            if(p.st >= 10) p.st -= 10;
-            p.enemy.curHp -= dmg;
-            if(p.enemy.curHp <= 0) {
-                addLog(`🏆 Победа! +${p.enemy.g} золота.`);
-                p.gold += p.enemy.g; p.exp += p.enemy.exp;
-                if(Math.random() < p.enemy.chance) p.res[p.enemy.drop]++;
-                p.enemy = null; move('world');
-            } else {
-                p.hp -= p.enemy.dmg;
-                if(p.hp <= 0) { p.hp=20; p.enemy=null; move('town'); }
+        // Регенерация онлайн
+        setInterval(() => {
+            if(p && !p.enemy) {
+                let maxHp = 100 + p.vit * 20;
+                if(p.hp < maxHp) p.hp = Math.min(maxHp, p.hp + 2);
+                if(p.st < 100) p.st = Math.min(100, p.st + 5);
+                updateUI();
             }
-            updateUI(); save();
-        }
+        }, 5000);
 
-        function renderCraft() {
-            document.getElementById('craft-items').innerHTML = `<div class="item-card">
-                <span>🔥 Клинок (10 клыков)</span>
-                <button onclick="doCraft('fang', 10)">Создать</button>
-            </div>`;
-        }
+        // Авто-сейв каждые 30 сек
+        setInterval(save, 30000);
 
-        function doCraft(res, amt) {
-            if(p.res[res] >= amt) { p.res[res] -= amt; addLog("⚒️ Предмет создан!"); }
-            else { alert("Мало ресурсов!"); }
-            renderChar(); save();
-        }
-
-        function updateUI() {
-            let maxHp = 100 + p.vit*20;
-            document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = p.gold;
-            document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
-            document.getElementById('st-fill').style.width = p.st+'%';
-            if(p.enemy) document.getElementById('en-hp-fill').style.width = (p.enemy.curHp/p.enemy.hp*100)+'%';
-        }
-
-        async function save() { localStorage.setItem('save_tschorni_v2', JSON.stringify(p)); }
-
-        setInterval(loadChat, 3000);
-        setInterval(() => { if(!p.enemy) { p.st = Math.min(100, p.st+10); updateUI(); } }, 5000);
-
-        window.onload = () => { if(p.enemy) move('battle'); else move(p.loc || 'town'); loadChat(); };
     </script>
 </body>
 </html>
