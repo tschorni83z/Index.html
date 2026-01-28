@@ -3,42 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>МИР ТЬМЫ: ONLINE</title>
+    <title>МИР ТЬМЫ: FINAL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0a0a0a; --box: #151515; }
         body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 5px; user-select: none; }
         .box { background: var(--box); padding: 10px; border-radius: 12px; border: 1px solid #333; max-width: 500px; margin: 5px auto; }
         
+        /* Статусы */
         .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; font-size: 11px; }
         .res-item { background: #000; padding: 5px; border-radius: 6px; border: 1px solid #222; text-align: center; color: var(--gold); }
         
-        .bar-bg { width: 100%; height: 16px; background: #222; border-radius: 8px; margin: 4px 0; overflow: hidden; border: 1px solid #333; position: relative; }
-        .bar-fill { height: 100%; transition: width 0.3s; width: 0%; }
-        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 16px; color: #fff; z-index: 2; }
+        .bar-bg { width: 100%; height: 18px; background: #222; border-radius: 9px; margin: 4px 0; overflow: hidden; border: 1px solid #333; position: relative; }
+        .bar-fill { height: 100%; transition: width 0.5s ease-in-out; width: 0%; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; color: #fff; z-index: 2; text-shadow: 1px 1px #000; }
 
+        /* Действия */
         #action-box { display: none; margin: 10px 0; }
         .proc-bg { width: 100%; height: 20px; background: #000; border: 1px solid var(--gold); border-radius: 10px; overflow: hidden; position: relative; }
         .proc-fill { height: 100%; background: var(--gold); width: 0%; }
         .proc-text { position: absolute; width: 100%; text-align: center; line-height: 20px; font-size: 11px; color: #000; font-weight: bold; }
 
-        .chat-container { display: flex; gap: 5px; height: 150px; margin-top: 10px; }
-        .online-list { width: 90px; background: #000; border: 1px solid #333; border-radius: 8px; font-size: 10px; padding: 5px; overflow-y: auto; color: #00ff88; text-align: left; }
-        .chat-box { flex: 1; background: #000; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; }
-        #chat-msgs { flex: 1; overflow-y: auto; padding: 5px; font-size: 11px; text-align: left; }
-        .chat-input-area { display: flex; border-top: 1px solid #333; }
-        #chat-in { flex: 1; background: none; border: none; color: #fff; padding: 6px; font-size: 12px; }
-
+        /* Интерфейс */
         .btn { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 12px; }
-        .btn:disabled { background: #333; color: #666; }
+        .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
         .tabs { display: flex; gap: 4px; margin: 10px 0; }
         .tab-btn { flex: 1; padding: 10px 2px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; cursor: pointer; }
         .tab-active { background: var(--gold); color: #000; font-weight: bold; }
 
+        /* Чат */
+        .chat-container { display: flex; gap: 5px; height: 150px; margin-top: 10px; }
+        .online-list { width: 90px; background: #000; border: 1px solid #333; border-radius: 8px; font-size: 10px; padding: 5px; overflow-y: auto; color: #00ff88; text-align: left; }
+        .chat-box { flex: 1; background: #000; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; }
+        #chat-msgs { flex: 1; overflow-y: auto; padding: 5px; font-size: 11px; text-align: left; line-height: 1.3; }
+        #chat-in { background: none; border: none; border-top: 1px solid #333; color: #fff; padding: 8px; font-size: 12px; }
+
         #log { background: #000; border: 1px solid #222; padding: 8px; height: 80px; overflow-y: auto; font-size: 11px; color: #aaa; border-radius: 8px; text-align: left; margin-top: 10px; }
         .time { color: #555; margin-right: 5px; }
-        .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-        .slot { background: #000; border: 1px solid #444; aspect-ratio: 1/1; border-radius: 6px; font-size: 9px; display: flex; align-items: center; justify-content: center; text-align: center; }
     </style>
 </head>
 <body>
@@ -58,40 +59,48 @@
     const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
     const sb = window.supabase.createClient(S_URL, S_KEY);
 
-    let user, data = {}, isBusy = false, currentTab = 'world', currentLoc = 'Лагерь';
+    let user = null, data = {}, isBusy = false, currentTab = 'world', currentLoc = 'Лагерь';
 
+    // Вход и Регистрация
     async function auth(mode) {
         const n = document.getElementById('u_nick').value.trim();
         const p = document.getElementById('u_pass').value.trim();
         if(!n || !p) return;
+
         if(mode === 'reg') {
-            await sb.from('users').insert({ 
+            const { error } = await sb.from('users').insert({ 
                 username: n, email_hidden: p, current_hp: 100, stamina: 100, gold: 100, 
                 str: 5, vit: 5, agi: 5, int: 5, wood: 0, iron: 0, coal: 0,
                 equip: { helmet: "Нет", body: "Ткань", weapon: "Кулаки", tool: "Кирка" },
                 location: 'Лагерь', last_seen: new Date().toISOString() 
             });
-            alert("Регистрация завершена!");
+            if(!error) alert("Герой создан! Теперь войдите.");
+            else alert("Имя занято.");
         } else {
-            const { data: u } = await sb.from('users').select('*').eq('username', n).single();
+            const { data: u, error } = await sb.from('users').select('*').eq('username', n).single();
             if (u && u.email_hidden === p) {
-                user = n; data = u; 
-                renderGame();
-                initChat();
-                setInterval(autoSave, 10000); 
-                setInterval(regenTick, 2000);
-                setInterval(updateOnline, 5000);
-            } else alert("Ошибка входа!");
+                user = n; data = u;
+                localStorage.setItem('rpg_nick', n);
+                localStorage.setItem('rpg_pass', p);
+                startGame();
+            } else alert("Неверный логин или пароль.");
         }
+    }
+
+    function startGame() {
+        renderGame();
+        initChat();
+        setInterval(autoSave, 10000); 
+        setInterval(regenTick, 2000);
+        setInterval(updateOnline, 5000);
     }
 
     function renderGame() {
         if(!user) return;
-        // Защита от NaN: если значения отсутствуют, ставим базу
-        const curSt = Number(data.stamina) || 0;
-        const maxSt = 100 + ((Number(data.str) || 5) * 5);
-        const curHp = Number(data.current_hp) || 0;
-        const maxHp = 100 + ((Number(data.vit) || 5) * 10);
+        const mHp = 100 + (parseInt(data.vit || 5) * 10);
+        const mSt = 100 + (parseInt(data.str || 5) * 5);
+        const curHp = Math.max(0, parseFloat(data.current_hp || 0));
+        const curSt = Math.max(0, parseFloat(data.stamina || 0));
 
         document.getElementById('game-container').innerHTML = `
             <div class="box">
@@ -102,8 +111,8 @@
                     <div class="res-item">⬛ ${data.coal||0}</div>
                     <div class="res-item">📍 ${currentLoc}</div>
                 </div>
-                <div class="bar-bg"><div class="bar-text">❤️ HP: ${Math.floor(curHp)} / ${maxHp}</div><div class="bar-fill" style="width:${(curHp/maxHp)*100}%; background:var(--hp)"></div></div>
-                <div class="bar-bg"><div class="bar-text">🔋 ST: ${Math.floor(curSt)} / ${maxSt}</div><div class="bar-fill" style="width:${(curSt/maxSt)*100}%; background:var(--st)"></div></div>
+                <div class="bar-bg"><div class="bar-text">❤️ HP: ${Math.floor(curHp)} / ${mHp}</div><div class="bar-fill" style="width:${(curHp/mHp)*100}%; background:var(--hp)"></div></div>
+                <div class="bar-bg"><div class="bar-text">🔋 ST: ${Math.floor(curSt)} / ${mSt}</div><div class="bar-fill" style="width:${(curSt/mSt)*100}%; background:var(--st)"></div></div>
                 <div id="action-box"><div class="proc-bg"><div id="proc-fill" class="proc-fill"></div><div id="proc-text" class="proc-text">0%</div></div></div>
             </div>
 
@@ -116,15 +125,14 @@
             <div id="tab-content">${renderTabContent()}</div>
 
             <div class="box chat-container">
-                <div class="online-list" id="online-list">Загрузка...</div>
+                <div class="online-list" id="online-list">...</div>
                 <div class="chat-box">
                     <div id="chat-msgs"></div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chat-in" placeholder="Сообщение или /pay ник сумма" onkeypress="if(event.key==='Enter') sendChat()">
-                    </div>
+                    <input type="text" id="chat-in" placeholder="Чат..." onkeypress="if(event.key==='Enter') sendChat()">
                 </div>
             </div>
             <div id="log"></div>
+            <button onclick="logout()" style="color: grey; background: none; border: none; font-size: 10px; margin-top: 10px;">Сменить персонажа</button>
         `;
     }
 
@@ -133,33 +141,31 @@
             <div class="box">
                 <button class="btn" onclick="startAction('travel', 'Лес', 5000)">🌲 В ЛЕС (5с)</button>
                 <button class="btn" onclick="startAction('travel', 'Шахта', 8000)">⛏️ В ШАХТУ (8с)</button>
-                <button class="btn" style="background:#444; color:#fff;" onclick="startAction('travel', 'Лагерь', 3000)">🛖 В ЛАГЕРЬ</button>
+                <button class="btn" onclick="startAction('travel', 'Лагерь', 3000)" style="background:#444; color:#fff;">🛖 В ЛАГЕРЬ</button>
             </div>`;
         if(currentTab === 'mine') return `
             <div class="box">
-                ${currentLoc==='Лагерь'?'<p>Здесь пусто.</p>':`<button class="btn" onclick="startAction('mine', '${currentLoc}', 4000)">ДОБЫВАТЬ (-20 ST)</button>`}
+                ${currentLoc==='Лагерь'?'<p>Здесь нечего добывать.</p>':`<button class="btn" onclick="startAction('mine', '${currentLoc}', 4000)">ДОБЫВАТЬ (-20 ST)</button>`}
             </div>`;
         if(currentTab === 'hero') return `
-            <div class="box">
-                <div class="inv-grid">
-                    <div class="slot">🪖<br>${data.equip?.helmet || 'Нет'}</div>
-                    <div class="slot">🧥<br>${data.equip?.body || 'Ткань'}</div>
-                    <div class="slot">⚔️<br>${data.equip?.weapon || 'Кулаки'}</div>
-                    <div class="slot">⛏️<br>${data.equip?.tool || 'Кирка'}</div>
-                </div>
-                <div style="font-size:12px; margin-top:10px; text-align:left; line-height:1.6;">
-                    💪 СИЛ: ${data.str||5} | 🎯 ЛОВ: ${data.agi||5}<br>
-                    🧠 ИНТ: ${data.int||5} | 🩸 ЖИВ: ${data.vit||5}
-                </div>
+            <div class="box" style="text-align: left;">
+                <h3>${user}</h3>
+                <p>💪 Сила: ${data.str} | 🎯 Ловкость: ${data.agi}</p>
+                <p>🧠 Интеллект: ${data.int} | 🩸 Живучесть: ${data.vit}</p>
+                <hr border="0" style="border-top: 1px solid #333">
+                <p>🪖 Шлем: ${data.equip.helmet}</p>
+                <p>🧥 Броня: ${data.equip.body}</p>
+                <p>⚔️ Оружие: ${data.equip.weapon}</p>
             </div>`;
         if(currentTab === 'shop') return `
             <div class="box">
                 <button class="btn" onclick="sellItem('wood', 3)">Продать Дерево (3💰)</button>
                 <button class="btn" onclick="sellItem('iron', 10)">Продать Железо (10💰)</button>
-                <button class="btn" onclick="buyItem('hp', 50)">Зелье HP (50💰)</button>
+                <button class="btn" onclick="buyItem('hp', 50)">Купить Зелье HP (50💰)</button>
             </div>`;
     }
 
+    // Логика действий
     function startAction(type, target, duration) {
         if(isBusy || (type==='mine' && data.stamina < 20)) return;
         isBusy = true; renderGame();
@@ -173,78 +179,46 @@
             if(elapsed >= duration) {
                 clearInterval(interval);
                 isBusy = false;
-                document.getElementById('action-box').style.display = 'none';
-                if(type === 'travel') { currentLoc = target; addLog(`Прибыл в ${target}`); }
+                if(type === 'travel') { currentLoc = target; addLog(`📍 Вы прибыли в ${target}`); }
                 else { 
                     data.stamina -= 20; 
-                    let key = currentLoc === 'Лес' ? 'wood' : 'iron';
-                    data[key] = (data[key]||0) + 1;
-                    addLog(`Добыто: ${key} +1`);
+                    let res = currentLoc === 'Лес' ? 'wood' : 'iron';
+                    data[res] = (parseInt(data[res]) || 0) + 1;
+                    addLog(`✅ Добыто: ${res} +1`);
                 }
-                renderGame();
+                autoSave(); renderGame();
             }
         }, 100);
     }
 
-    async function initChat() {
-        sb.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => showMsg(p.new)).subscribe();
-        const { data: msgs } = await sb.from('messages').select('*').order('created_at', { ascending: false }).limit(15);
-        if(msgs) msgs.reverse().forEach(showMsg);
-    }
-
-    async function sendChat() {
-        const inp = document.getElementById('chat-in');
-        const val = inp.value.trim();
-        if(!val) return;
-        
-        if(val.startsWith('/pay ')) {
-            const parts = val.split(' ');
-            const target = parts[1];
-            const amount = parseInt(parts[2]);
-            if(target && amount > 0 && data.gold >= amount) {
-                data.gold -= amount;
-                await sb.from('users').update({ gold: data.gold }).eq('username', user);
-                const { data: tData } = await sb.from('users').select('gold').eq('username', target).single();
-                if(tData) {
-                    await sb.from('users').update({ gold: tData.gold + amount }).eq('username', target);
-                    await sb.from('messages').insert({ user: 'СИСТЕМА', text: `${user} передал ${amount}💰 игроку ${target}`, loc: 'Мир' });
-                }
-            }
-        } else {
-            await sb.from('messages').insert({ user: user, text: val, loc: currentLoc });
+    // Рынок
+    async function sellItem(res, price) {
+        if(data[res] > 0) {
+            data[res]--;
+            data.gold = (parseInt(data.gold) || 0) + price;
+            addLog(`💰 Продано ${res} за ${price} золота.`);
+            await autoSave();
+            renderGame();
         }
-        inp.value = '';
     }
 
-    function showMsg(m) {
-        const box = document.getElementById('chat-msgs');
-        if(!box) return;
-        const time = new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        box.innerHTML += `<div><span class="time">${time}</span><b>${m.user}:</b> ${m.text}</div>`;
-        box.scrollTop = box.scrollHeight;
+    async function buyItem(type, cost) {
+        if(data.gold >= cost) {
+            data.gold -= cost;
+            if(type === 'hp') data.current_hp = Math.min(100+(data.vit*10), data.current_hp+30);
+            await autoSave();
+            renderGame();
+            addLog(`🧪 Использовано зелье.`);
+        }
     }
 
-    async function updateOnline() {
-        const { data: users } = await sb.from('users').select('username, location, last_seen');
-        const list = document.getElementById('online-list');
-        if(!list) return;
-        const now = new Date();
-        const local = users.filter(u => u.location === currentLoc && (now - new Date(u.last_seen)) < 40000);
-        list.innerHTML = `<b>ОНЛАЙН:</b><br>` + local.map(u => (u.username === user ? `<u>${u.username}</u>` : u.username)).join('<br>');
-    }
-
-    function addLog(m) {
-        const l = document.getElementById('log');
-        if(!l) return;
-        l.innerHTML = `<div><span class="time">[${new Date().toLocaleTimeString()}]</span> ${m}</div>` + l.innerHTML;
-    }
-
+    // Системные функции
     function regenTick() {
-        if(isBusy) return;
-        const mHp = 100 + ((data.vit||5)*10); 
-        const mSt = 100 + ((data.str||5)*5);
-        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, (data.current_hp||0) + 0.6);
-        if(data.stamina < mSt) data.stamina = Math.min(mSt, (data.stamina||0) + 1.2);
+        if(isBusy || !user) return;
+        const mHp = 100 + (parseInt(data.vit || 5) * 10);
+        const mSt = 100 + (parseInt(data.str || 5) * 5);
+        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, parseFloat(data.current_hp) + 0.5);
+        if(data.stamina < mSt) data.stamina = Math.min(mSt, parseFloat(data.stamina) + 1.2);
         renderGame();
     }
 
@@ -255,9 +229,48 @@
         await sb.from('users').update(data).eq('username', user);
     }
 
-    function setTab(t) { currentTab = t; renderGame(); updateOnline(); }
-    async function sellItem(k, p) { if(data[k]>0){ data[k]--; data.gold+=p; addLog(`Продано ${k} за ${p}💰`); renderGame(); } }
-    async function buyItem(t, c) { if(data.gold>=c){ data.gold-=c; data.current_hp=Math.min(100+(data.vit||5)*10, data.current_hp+30); renderGame(); } }
+    // Чат и Онлайн
+    async function initChat() {
+        sb.channel('global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
+            const box = document.getElementById('chat-msgs');
+            if(box) {
+                box.innerHTML += `<div><b>${p.new.user}:</b> ${p.new.text}</div>`;
+                box.scrollTop = box.scrollHeight;
+            }
+        }).subscribe();
+    }
+
+    async function sendChat() {
+        const inp = document.getElementById('chat-in');
+        if(!inp.value.trim()) return;
+        await sb.from('messages').insert({ user: user, text: inp.value });
+        inp.value = '';
+    }
+
+    async function updateOnline() {
+        const { data: users } = await sb.from('users').select('username, location, last_seen');
+        const list = document.getElementById('online-list');
+        if(!list) return;
+        const now = new Date();
+        const active = users.filter(u => (now - new Date(u.last_seen)) < 30000);
+        list.innerHTML = `<b>ОНЛАЙН:</b><br>` + active.map(u => u.username === user ? `<u>${u.username}</u>` : u.username).join('<br>');
+    }
+
+    function addLog(m) {
+        const l = document.getElementById('log');
+        if(l) l.innerHTML = `<div><span class="time">[${new Date().toLocaleTimeString()}]</span> ${m}</div>` + l.innerHTML;
+    }
+
+    function setTab(t) { currentTab = t; renderGame(); }
+    function logout() { localStorage.clear(); location.reload(); }
+
+    window.onload = async () => {
+        const n = localStorage.getItem('rpg_nick'), p = localStorage.getItem('rpg_pass');
+        if(n && p) {
+            const { data: u } = await sb.from('users').select('*').eq('username', n).single();
+            if(u && u.email_hidden === p) { user = n; data = u; startGame(); }
+        }
+    };
 </script>
 </body>
 </html>
