@@ -8,20 +8,19 @@
     <style>
         body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; padding: 10px; margin: 0; }
         .box { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; max-width: 400px; margin: 10px auto; }
-        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        input { width: 90%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; font-size: 16px; }
+        .btn-reg { background: none; color: #ffcc00; border: 1px solid #ffcc00; }
+        .btn:disabled { background: #444; color: #888; }
         
-        /* Стили ресурсов */
         .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .res-item { background: #000; padding: 10px; border-radius: 8px; border: 1px solid #222; }
+        .res-item { background: #000; padding: 10px; border-radius: 8px; border: 1px solid #222; font-size: 14px; }
         
-        /* Локации */
         .loc-btn { background: #333; color: #fff; padding: 10px; border-radius: 5px; border: 1px solid #444; margin: 5px; font-size: 12px; }
         .loc-active { border-color: #ffcc00; color: #ffcc00; background: #221a00; }
 
-        /* Полоса загрузки */
-        #p-bar { width: 0%; height: 5px; background: #ffcc00; margin-top: 5px; transition: width linear; border-radius: 2px; }
-        #p-cont { width: 100%; background: #222; height: 5px; margin-top: 10px; display: none; border-radius: 2px; }
+        #p-cont { width: 100%; background: #222; height: 8px; margin-top: 15px; display: none; border-radius: 4px; overflow: hidden; }
+        #p-bar { width: 0%; height: 100%; background: #ffcc00; transition: width linear; }
     </style>
 </head>
 <body>
@@ -29,10 +28,12 @@
 <div id="game-container">
     <h1>TSCHORNI</h1>
     <div class="box">
-        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:90%; padding:10px; margin-bottom:10px;">
-        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:90%; padding:10px;">
-        <button class="btn" onclick="play()">ВОЙТИ</button>
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ">
+        <button class="btn" onclick="auth('login')">ВОЙТИ</button>
+        <button class="btn btn-reg" onclick="auth('reg')">СОЗДАТЬ ГЕРОЯ</button>
     </div>
+    <p id="st" style="color: #666;">Система готова</p>
 </div>
 
 <script>
@@ -43,18 +44,28 @@
     let user, data = {}, isBusy = false, currentLoc = 'forest';
 
     const locations = {
-        forest: { name: '🌲 ЛЕС', res: 'wood', label: 'Дерево', time: 5000 },
-        quarry: { name: '🪨 КАРЬЕР', res: 'stone', label: 'Камень', time: 8000 },
-        mine: { name: '⛏️ ШАХТА', res: 'iron', label: 'Железо', time: 12000 }
+        forest: { name: '🌲 ЛЕС', res: 'wood', time: 5000 },
+        quarry: { name: '🪨 КАРЬЕР', res: 'stone', time: 8000 },
+        mine: { name: '⛏️ ШАХТА', res: 'iron', time: 12000 }
     };
 
-    async function play() {
+    async function auth(mode) {
         const nick = document.getElementById('u_nick').value.trim();
         const pass = document.getElementById('u_pass').value.trim();
-        const { data: u, error } = await sb.from('users').select('*').eq('username', nick).single();
-        if (u && u.email_hidden === pass) {
-            user = nick; data = u; renderGame();
-        } else { alert("Ошибка входа!"); }
+        const st = document.getElementById('st');
+        if (!nick || !pass) return alert("Заполни поля!");
+
+        try {
+            if (mode === 'reg') {
+                const { error } = await sb.from('users').insert({ id: crypto.randomUUID(), username: nick, email_hidden: pass });
+                if (error) throw error;
+                alert("Герой создан! Теперь входи.");
+            } else {
+                const { data: u, error } = await sb.from('users').select('*').eq('username', nick).single();
+                if (!u || u.email_hidden !== pass) throw new Error("Ошибка входа");
+                user = nick; data = u; renderGame();
+            }
+        } catch (e) { alert(e.message); }
     }
 
     function renderGame() {
@@ -71,23 +82,20 @@
 
             <div class="box">
                 <h3>ЛОКАЦИЯ: <span id="loc-name">${locations[currentLoc].name}</span></h3>
-                <button class="loc-btn ${currentLoc==='forest'?'loc-active':''}" onclick="setLoc('forest')">ЛЕС</button>
-                <button class="loc-btn ${currentLoc==='quarry'?'loc-active':''}" onclick="setLoc('quarry')">КАРЬЕР</button>
-                <button class="loc-btn ${currentLoc==='mine'?'loc-active':''}" onclick="setLoc('mine')">ШАХТА</button>
-                
+                <div style="margin-bottom: 10px;">
+                    <button class="loc-btn ${currentLoc==='forest'?'loc-active':''}" onclick="setLoc('forest')">ЛЕС</button>
+                    <button class="loc-btn ${currentLoc==='quarry'?'loc-active':''}" onclick="setLoc('quarry')">КАРЬЕР</button>
+                    <button class="loc-btn ${currentLoc==='mine'?'loc-active':''}" onclick="setLoc('mine')">ШАХТА</button>
+                </div>
                 <button id="m-btn" class="btn" onclick="mine()">ДОБЫВАТЬ</button>
                 <div id="p-cont"><div id="p-bar"></div></div>
             </div>
             
-            <button class="btn" onclick="location.reload()" style="background:#333; color:#fff;">ВЫЙТИ</button>
+            <button class="btn" onclick="location.reload()" style="background:#333; color:#fff; width: 200px;">ВЫЙТИ</button>
         `;
     }
 
-    function setLoc(l) {
-        if (isBusy) return;
-        currentLoc = l;
-        renderGame();
-    }
+    function setLoc(l) { if (!isBusy) { currentLoc = l; renderGame(); } }
 
     async function mine() {
         if (isBusy) return;
@@ -97,29 +105,21 @@
         const bar = document.getElementById('p-bar');
         const cont = document.getElementById('p-cont');
 
-        btn.disabled = true;
-        btn.innerText = "ДОБЫЧА...";
-        cont.style.display = 'block';
-        bar.style.width = '0%';
+        btn.disabled = true; btn.innerText = "В ПРОЦЕССЕ...";
+        cont.style.display = 'block'; bar.style.width = '0%';
         
         setTimeout(() => { bar.style.transition = `width ${loc.time}ms linear`; bar.style.width = '100%'; }, 50);
 
         setTimeout(async () => {
-            const count = Math.floor(Math.random() * 3) + 1; // Добываем 1-3 ресурса
+            const count = Math.floor(Math.random() * 3) + 1;
             data[loc.res] = (data[loc.res] || 0) + count;
-            
             document.getElementById(`r-${loc.res}`).innerText = data[loc.res];
             
-            // Сохраняем в базу
             const updateData = {}; updateData[loc.res] = data[loc.res];
             await sb.from('users').update(updateData).eq('username', user);
 
-            isBusy = false;
-            btn.disabled = false;
-            btn.innerText = "ДОБЫВАТЬ";
-            cont.style.display = 'none';
-            bar.style.width = '0%';
-            bar.style.transition = 'none';
+            isBusy = false; btn.disabled = false; btn.innerText = "ДОБЫВАТЬ";
+            cont.style.display = 'none'; bar.style.width = '0%'; bar.style.transition = 'none';
         }, loc.time);
     }
 </script>
