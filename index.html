@@ -4,145 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TSCHORNI GAME</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #ffcc00; --bg: #0a0a0a; --panel: #161616; --border: #2a2a2a; --red: #ff4d4d; --green: #00ff88; }
-        body { background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; padding: 20px; }
+        :root { --gold: #ffcc00; --bg: #0a0a0a; --panel: #161616; --border: #2a2a2a; }
+        body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
         .container { width: 100%; max-width: 360px; }
-        .logo { text-align: center; font-size: 28px; font-weight: 900; color: var(--gold); letter-spacing: 5px; margin-bottom: 30px; text-shadow: 0 0 15px rgba(255,204,0,0.3); }
-        .section { background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; }
-        h3 { margin-top: 0; color: var(--gold); font-size: 14px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 10px; opacity: 0.7; }
-        input { width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 8px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--gold); }
-        .btn { width: 100%; padding: 15px; font-weight: 800; cursor: pointer; border-radius: 8px; border: none; text-transform: uppercase; transition: 0.2s; margin-top: 5px; }
-        .btn-login { background: var(--gold); color: #000; }
-        .btn-reg { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .msg { font-size: 12px; margin-top: 10px; text-align: center; min-height: 15px; font-weight: bold; }
-        #game-ui { display: none; text-align: center; margin-top: 50px; }
+        .section { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; border: none; text-transform: uppercase; background: var(--gold); color: #000; }
+        .btn-reg { background: transparent; border: 1px solid var(--gold); color: var(--gold); margin-top: 10px; }
+        #log { font-size: 12px; text-align: center; margin-top: 10px; color: #888; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen" class="container">
-        <div class="logo">TSCHORNI</div>
-
+        <h2 style="text-align:center; color:var(--gold)">TSCHORNI</h2>
+        
         <div class="section">
-            <h3>Вход в игру</h3>
+            <h3 style="margin-top:0">ВХОД</h3>
             <input type="text" id="l-nick" placeholder="Никнейм">
             <input type="password" id="l-pass" placeholder="Пароль">
-            <button class="btn btn-login" id="btn-login-exec" onclick="login()">Войти</button>
-            <div id="l-msg" class="msg"></div>
+            <button class="btn" onclick="gameAuth('login')">ВОЙТИ</button>
         </div>
 
         <div class="section">
-            <h3>Создать героя</h3>
-            <input type="text" id="r-nick" placeholder="Придумайте Ник">
-            <input type="password" id="r-pass" placeholder="Придумайте Пароль">
-            <button class="btn btn-reg" id="btn-reg-exec" onclick="register()">Зарегистрироваться</button>
-            <div id="r-msg" class="msg"></div>
+            <h3 style="margin-top:0">РЕГИСТРАЦИЯ</h3>
+            <input type="text" id="r-nick" placeholder="Новый ник">
+            <input type="password" id="r-pass" placeholder="Пароль (мин. 6 симв.)">
+            <button class="btn btn-reg" onclick="gameAuth('reg')">СОЗДАТЬ ГЕРОЯ</button>
         </div>
+        
+        <div id="log">Статус: Ожидание...</div>
     </div>
 
-    <div id="game-ui" class="container">
-        <div class="section">
-            <h1 id="welcome-msg" style="color:var(--gold)"></h1>
-            <p>Вы успешно вошли в систему.</p>
-            <button class="btn btn-login" onclick="location.reload()">Выйти</button>
-        </div>
+    <div id="game-ui" style="display:none; text-align:center; margin-top:50px;">
+        <h1 style="color:var(--gold)">ТЫ В ИГРЕ!</h1>
+        <button class="btn" onclick="location.reload()">ВЫЙТИ</button>
     </div>
 
     <script>
+        // Проверяем наличие библиотеки сразу
+        window.onload = () => {
+            if (!window.supabase) {
+                document.getElementById('log').innerText = "ОШИБКА: Библиотека Supabase не загружена!";
+                document.getElementById('log').style.color = "red";
+            } else {
+                console.log("Supabase Ready");
+            }
+        };
+
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SB_URL, SB_KEY);
-        } catch (e) {
-            console.error("Библиотека не загружена!");
-        }
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        async function register() {
-            const nick = document.getElementById('r-nick').value.trim();
-            const pass = document.getElementById('r-pass').value.trim();
-            const msg = document.getElementById('r-msg');
-            const btn = document.getElementById('btn-reg-exec');
+        async function gameAuth(mode) {
+            const status = document.getElementById('log');
+            
+            // Получаем данные в зависимости от режима
+            const nick = document.getElementById(mode === 'login' ? 'l-nick' : 'r-nick').value.trim();
+            const pass = document.getElementById(mode === 'login' ? 'l-pass' : 'r-pass').value.trim();
 
-            if (!nick || !pass) { alert("Заполни ник и пароль!"); return; }
-            if (pass.length < 6) { alert("Пароль должен быть от 6 символов!"); return; }
+            if (!nick || !pass) {
+                alert("Заполни все поля!");
+                return;
+            }
 
-            btn.disabled = true;
-            msg.innerText = "⏳ Регистрация...";
-            msg.style.color = "white";
-
-            const fakeEmail = nick.toLowerCase() + "@game.local";
+            status.innerText = "⏳ Выполняю запрос...";
+            status.style.color = "white";
 
             try {
-                // 1. Создаем в Auth
-                const { data, error } = await supabase.auth.signUp({
-                    email: fakeEmail,
-                    password: pass
-                });
+                const fakeEmail = nick.toLowerCase() + "@game.local";
 
-                if (error) throw error;
-
-                // 2. Создаем в таблице
-                if (data.user) {
-                    const { error: dbError } = await supabase.from('users').insert({
-                        id: data.user.id,
-                        username: nick,
-                        email_hidden: fakeEmail,
-                        save_data: { username: nick, hp: 100, gold: 100 }
+                if (mode === 'reg') {
+                    // РЕГИСТРАЦИЯ
+                    const { data, error } = await supabase.auth.signUp({
+                        email: fakeEmail,
+                        password: pass
                     });
-                    if (dbError) throw dbError;
-                }
+                    if (error) throw error;
 
-                msg.style.color = "var(--green)";
-                msg.innerText = "Аккаунт создан! Теперь входи сверху.";
-                alert("Успех! Теперь вводи данные в поле ВХОД.");
+                    if (data.user) {
+                        const { error: dbErr } = await supabase.from('users').insert({
+                            id: data.user.id,
+                            username: nick,
+                            email_hidden: fakeEmail,
+                            save_data: { username: nick, hp: 100, gold: 100 }
+                        });
+                        if (dbErr) throw dbErr;
+                    }
+                    alert("Герой создан! Теперь нажми кнопку ВОЙТИ");
+                    status.innerText = "Успех! Входи.";
+                } else {
+                    // ВХОД
+                    const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
+                    if (!u || uErr) throw new Error("Ник не найден!");
+
+                    const { error: logErr } = await supabase.auth.signInWithPassword({
+                        email: u.email_hidden,
+                        password: pass
+                    });
+                    if (logErr) throw logErr;
+
+                    document.getElementById('auth-screen').style.display = 'none';
+                    document.getElementById('game-ui').style.display = 'block';
+                }
             } catch (err) {
                 alert("ОШИБКА: " + err.message);
-                msg.style.color = "var(--red)";
-                msg.innerText = err.message;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function login() {
-            const nick = document.getElementById('l-nick').value.trim();
-            const pass = document.getElementById('l-pass').value.trim();
-            const msg = document.getElementById('l-msg');
-            const btn = document.getElementById('btn-login-exec');
-
-            if (!nick || !pass) { alert("Введи данные для входа!"); return; }
-
-            btn.disabled = true;
-            msg.innerText = "⏳ Вход...";
-            msg.style.color = "white";
-
-            try {
-                const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                
-                if (!u || uErr) throw new Error("Герой не найден. Зарегистрируйся ниже.");
-
-                const { data: logData, error: logErr } = await supabase.auth.signInWithPassword({
-                    email: u.email_hidden,
-                    password: pass
-                });
-
-                if (logErr) throw logErr;
-
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('game-ui').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = "ПРИВЕТ, " + nick.toUpperCase();
-            } catch (err) {
-                alert("ОШИБКА ВХОДА: " + err.message);
-                msg.style.color = "var(--red)";
-                msg.innerText = err.message;
-            } finally {
-                btn.disabled = false;
+                status.innerText = "Ошибка: " + err.message;
+                status.style.color = "red";
             }
         }
     </script>
