@@ -3,117 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TSCHORNI RPG</title>
+    <title>TSCHORNI WORLD</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .box { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; max-width: 400px; margin: 20px auto; }
-        h1 { color: #ffcc00; letter-spacing: 2px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); background: #e6b800; }
-        .btn-work { background: #222; color: #ffcc00; border: 1px solid #ffcc00; }
-        .btn-heal { background: #006633; color: #fff; }
-        #status { margin-top: 20px; color: #888; font-size: 14px; }
-        .stats-val { font-size: 20px; font-weight: bold; color: #fff; }
+        body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; padding: 10px; margin: 0; }
+        .box { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; max-width: 400px; margin: 10px auto; }
+        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        
+        /* Стили ресурсов */
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .res-item { background: #000; padding: 10px; border-radius: 8px; border: 1px solid #222; }
+        
+        /* Локации */
+        .loc-btn { background: #333; color: #fff; padding: 10px; border-radius: 5px; border: 1px solid #444; margin: 5px; font-size: 12px; }
+        .loc-active { border-color: #ffcc00; color: #ffcc00; background: #221a00; }
+
+        /* Полоса загрузки */
+        #p-bar { width: 0%; height: 5px; background: #ffcc00; margin-top: 5px; transition: width linear; border-radius: 2px; }
+        #p-cont { width: 100%; background: #222; height: 5px; margin-top: 10px; display: none; border-radius: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <div id="auth-screen">
-            <h1>TSCHORNI</h1>
-            <div class="box">
-                <input type="text" id="u_nick" placeholder="НИКНЕЙМ">
-                <input type="password" id="u_pass" placeholder="ПАРОЛЬ">
-                <button class="btn" onclick="play('login')">ВОЙТИ</button>
-                <button class="btn" onclick="play('reg')" style="background:none; color:#ffcc00; border:1px solid #ffcc00;">СОЗДАТЬ ГЕРОЯ</button>
-            </div>
-            <p id="status">Статус: Готов к игре</p>
-        </div>
+<div id="game-container">
+    <h1>TSCHORNI</h1>
+    <div class="box">
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:90%; padding:10px; margin-bottom:10px;">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:90%; padding:10px;">
+        <button class="btn" onclick="play()">ВОЙТИ</button>
     </div>
+</div>
 
-    <script>
-        const S_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co";
-        const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        const sb = window.supabase.createClient(S_URL, S_KEY);
+<script>
+    const S_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co";
+    const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
+    const sb = window.supabase.createClient(S_URL, S_KEY);
 
-        let curUser = null;
-        let curGold = 0;
-        let curHP = 0;
+    let user, data = {}, isBusy = false, currentLoc = 'forest';
 
-        async function play(mode) {
-            const status = document.getElementById('status');
-            const nick = document.getElementById('u_nick').value.trim();
-            const pass = document.getElementById('u_pass').value.trim();
+    const locations = {
+        forest: { name: '🌲 ЛЕС', res: 'wood', label: 'Дерево', time: 5000 },
+        quarry: { name: '🪨 КАРЬЕР', res: 'stone', label: 'Камень', time: 8000 },
+        mine: { name: '⛏️ ШАХТА', res: 'iron', label: 'Железо', time: 12000 }
+    };
 
-            if (!nick || !pass) return alert("Введите данные!");
-            status.innerText = "⏳ Секунду...";
+    async function play() {
+        const nick = document.getElementById('u_nick').value.trim();
+        const pass = document.getElementById('u_pass').value.trim();
+        const { data: u, error } = await sb.from('users').select('*').eq('username', nick).single();
+        if (u && u.email_hidden === pass) {
+            user = nick; data = u; renderGame();
+        } else { alert("Ошибка входа!"); }
+    }
 
-            try {
-                if (mode === 'reg') {
-                    const { error } = await sb.from('users').insert({
-                        id: crypto.randomUUID(),
-                        username: nick,
-                        email_hidden: pass 
-                    });
-                    if (error) {
-                        if (error.message.includes("unique")) throw new Error("Ник занят!");
-                        throw error;
-                    }
-                    alert("Герой создан!");
-                    status.innerText = "Готов! Теперь жми ВОЙТИ";
-                } else {
-                    const { data, error } = await sb.from('users').select('*').eq('username', nick).single();
-                    if (!data || error) throw new Error("Герой не найден!");
-                    if (data.email_hidden !== pass) throw new Error("Неверный пароль!");
-
-                    curUser = data.username;
-                    curGold = data.gold;
-                    curHP = data.hp;
-                    showGame();
-                }
-            } catch (err) {
-                alert("ОШИБКА: " + err.message);
-                status.innerText = "Ошибка входа";
-            }
-        }
-
-        function showGame() {
-            document.getElementById('game-container').innerHTML = `
-                <h1 style="margin-top:40px;">ГЕРОЙ: ${curUser.toUpperCase()}</h1>
-                <div class="box">
-                    <p>💰 Золото: <span id="g_val" class="stats-val">${curGold}</span></p>
-                    <p>❤️ Здоровье: <span id="h_val" class="stats-val">${curHP}</span></p>
+    function renderGame() {
+        document.getElementById('game-container').innerHTML = `
+            <h2>ГЕРОЙ: ${user}</h2>
+            <div class="box">
+                <div class="res-grid">
+                    <div class="res-item">💰 Золото: <b id="r-gold">${data.gold}</b></div>
+                    <div class="res-item">🌲 Дерево: <b id="r-wood">${data.wood || 0}</b></div>
+                    <div class="res-item">🪨 Камень: <b id="r-stone">${data.stone || 0}</b></div>
+                    <div class="res-item">⛏️ Железо: <b id="r-iron">${data.iron || 0}</b></div>
                 </div>
+            </div>
+
+            <div class="box">
+                <h3>ЛОКАЦИЯ: <span id="loc-name">${locations[currentLoc].name}</span></h3>
+                <button class="loc-btn ${currentLoc==='forest'?'loc-active':''}" onclick="setLoc('forest')">ЛЕС</button>
+                <button class="loc-btn ${currentLoc==='quarry'?'loc-active':''}" onclick="setLoc('quarry')">КАРЬЕР</button>
+                <button class="loc-btn ${currentLoc==='mine'?'loc-active':''}" onclick="setLoc('mine')">ШАХТА</button>
                 
-                <div style="max-width:400px; margin: 0 auto; padding: 0 20px;">
-                    <button class="btn btn-work" onclick="doWork()">РАБОТАТЬ (+10 💰)</button>
-                    <button class="btn btn-heal" onclick="doHeal()">ЛЕЧИТЬСЯ (100%)</button>
-                    <button class="btn" onclick="location.reload()" style="background:#444; color:#fff; margin-top:40px;">ВЫЙТИ</button>
-                </div>
-            `;
-        }
+                <button id="m-btn" class="btn" onclick="mine()">ДОБЫВАТЬ</button>
+                <div id="p-cont"><div id="p-bar"></div></div>
+            </div>
+            
+            <button class="btn" onclick="location.reload()" style="background:#333; color:#fff;">ВЫЙТИ</button>
+        `;
+    }
 
-        async function save() {
-            await sb.from('users').update({ gold: curGold, hp: curHP }).eq('username', curUser);
-        }
+    function setLoc(l) {
+        if (isBusy) return;
+        currentLoc = l;
+        renderGame();
+    }
 
-        window.doWork = async () => {
-            curGold += 10;
-            document.getElementById('g_val').innerText = curGold;
-            await save();
-        };
+    async function mine() {
+        if (isBusy) return;
+        isBusy = true;
+        const loc = locations[currentLoc];
+        const btn = document.getElementById('m-btn');
+        const bar = document.getElementById('p-bar');
+        const cont = document.getElementById('p-cont');
 
-        window.doHeal = async () => {
-            if (curHP < 100) {
-                curHP = 100;
-                document.getElementById('h_val').innerText = curHP;
-                await save();
-            } else {
-                alert("Вы уже здоровы!");
-            }
-        };
-    </script>
+        btn.disabled = true;
+        btn.innerText = "ДОБЫЧА...";
+        cont.style.display = 'block';
+        bar.style.width = '0%';
+        
+        setTimeout(() => { bar.style.transition = `width ${loc.time}ms linear`; bar.style.width = '100%'; }, 50);
+
+        setTimeout(async () => {
+            const count = Math.floor(Math.random() * 3) + 1; // Добываем 1-3 ресурса
+            data[loc.res] = (data[loc.res] || 0) + count;
+            
+            document.getElementById(`r-${loc.res}`).innerText = data[loc.res];
+            
+            // Сохраняем в базу
+            const updateData = {}; updateData[loc.res] = data[loc.res];
+            await sb.from('users').update(updateData).eq('username', user);
+
+            isBusy = false;
+            btn.disabled = false;
+            btn.innerText = "ДОБЫВАТЬ";
+            cont.style.display = 'none';
+            bar.style.width = '0%';
+            bar.style.transition = 'none';
+        }, loc.time);
+    }
+</script>
 </body>
 </html>
