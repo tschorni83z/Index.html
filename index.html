@@ -30,15 +30,13 @@
             border: 1px solid var(--border); color: #fff; border-radius: 8px; 
             box-sizing: border-box; outline: none;
         }
-        input:focus { border-color: var(--gold); }
         .btn {
             width: 100%; padding: 15px; font-weight: 800; cursor: pointer;
             border-radius: 8px; border: none; text-transform: uppercase; transition: 0.2s;
         }
         .btn-login { background: var(--gold); color: #000; }
         .btn-reg { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
-        .btn:active { transform: scale(0.98); }
-        .msg { font-size: 12px; margin-top: 10px; text-align: center; min-height: 15px; }
+        .msg { font-size: 12px; margin-top: 10px; text-align: center; min-height: 15px; font-weight: bold; }
         #game-ui { display: none; text-align: center; margin-top: 50px; }
     </style>
 </head>
@@ -62,7 +60,7 @@
             <input type="text" id="r-nick" placeholder="Придумайте Никнейм">
             <input type="email" id="r-email" placeholder="Ваша Почта (Email)">
             <input type="password" id="r-pass" placeholder="Пароль">
-            <button class="btn btn-reg" onclick="register()">Создать аккаунта</button>
+            <button class="btn btn-reg" onclick="register()">Создать аккаунт</button>
             <div id="r-msg" class="msg"></div>
         </div>
     </div>
@@ -76,77 +74,103 @@
     </div>
 
     <script>
+        // Инициализация с проверкой
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
-
-        // ФУНКЦИЯ ВХОДА
-        async function login() {
-            const nick = document.getElementById('l-nick').value.trim();
-            const pass = document.getElementById('l-pass').value.trim();
-            const msg = document.getElementById('l-msg');
-
-            if(!nick || !pass) return msg.innerText = "Введите данные!";
-            msg.innerText = "Вход...";
-
-            try {
-                const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                if(!u || uErr) throw new Error("Ник не найден");
-
-                const { data: log, error: logErr } = await supabase.auth.signInWithPassword({
-                    email: u.email_hidden, password: pass
-                });
-                if(logErr) throw logErr;
-
-                showGame(nick);
-            } catch (e) {
-                msg.style.color = "var(--red)";
-                msg.innerText = e.message;
-            }
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SB_URL, SB_KEY);
+            console.log("Supabase подключен успешно");
+        } catch (e) {
+            alert("Ошибка подключения библиотеки: " + e.message);
         }
 
-        // ФУНКЦИЯ РЕГИСТРАЦИИ
+        // РЕГИСТРАЦИЯ
         async function register() {
             const nick = document.getElementById('r-nick').value.trim();
             const email = document.getElementById('r-email').value.trim();
             const pass = document.getElementById('r-pass').value.trim();
             const msg = document.getElementById('r-msg');
 
-            if(!nick || !email || !pass) return msg.innerText = "Заполните все поля!";
-            msg.innerText = "Создание...";
+            if(!nick || !email || !pass) {
+                msg.style.color = "var(--red)";
+                msg.innerText = "Ошибка: Заполните все поля!";
+                return;
+            }
+
+            msg.style.color = "white";
+            msg.innerText = "⏳ Создание аккаунта...";
 
             try {
-                // Проверка ника
-                const { data: check } = await supabase.from('users').select('username').eq('username', nick).single();
-                if(check) throw new Error("Ник занят");
-
-                // Auth
+                // 1. Пытаемся создать пользователя в Auth
                 const { data, error } = await supabase.auth.signUp({
-                    email, password: pass, options: { data: { nickname: nick } }
+                    email: email,
+                    password: pass,
+                    options: { data: { nickname: nick } }
                 });
-                if(error) throw error;
 
-                // DB
-                await supabase.from('users').insert({
-                    id: data.user.id, username: nick, email_hidden: email,
-                    save_data: { username: nick, hp: 100, gold: 100 }
-                });
+                if (error) throw error;
+
+                // 2. Если Auth прошел, пишем в таблицу users
+                if (data.user) {
+                    const { error: dbError } = await supabase.from('users').insert({
+                        id: data.user.id,
+                        username: nick,
+                        email_hidden: email,
+                        save_data: { username: nick, hp: 100, gold: 100 }
+                    });
+                    if (dbError) throw dbError;
+                }
 
                 msg.style.color = "var(--green)";
-                msg.innerText = "Успех! Подтвердите почту в письме!";
-            } catch (e) {
+                msg.innerText = "✅ Успех! Проверьте почту для подтверждения.";
+            } catch (err) {
+                console.error(err);
                 msg.style.color = "var(--red)";
-                msg.innerText = e.message;
+                msg.innerText = "Ошибка: " + err.message;
+            }
+        }
+
+        // ВХОД
+        async function login() {
+            const nick = document.getElementById('l-nick').value.trim();
+            const pass = document.getElementById('l-pass').value.trim();
+            const msg = document.getElementById('l-msg');
+
+            if(!nick || !pass) {
+                msg.style.color = "var(--red)";
+                msg.innerText = "Введите ник и пароль!";
+                return;
+            }
+
+            msg.style.color = "white";
+            msg.innerText = "⏳ Вход...";
+
+            try {
+                const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
+                if(!u || uErr) throw new Error("Герой с таким ником не найден");
+
+                const { data: log, error: logErr } = await supabase.auth.signInWithPassword({
+                    email: u.email_hidden,
+                    password: pass
+                });
+                if(logErr) throw logErr;
+
+                showGame(nick);
+            } catch (err) {
+                msg.style.color = "var(--red)";
+                msg.innerText = err.message;
             }
         }
 
         function showGame(name) {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            document.getElementById('welcome-msg').innerText = "ПРИВЕТ, " + name;
+            document.getElementById('welcome-msg').innerText = "ПРИВЕТ, " + name.toUpperCase();
         }
 
-        // Проверка сессии
+        // Проверка сессии при загрузке
         window.onload = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
