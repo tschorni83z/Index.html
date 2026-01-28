@@ -6,105 +6,18 @@
     <title>TSCHORNI: MOB HUNTER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --gold: #ffcc00;
-            --hp: #ff4444;
-            --st: #00ff88;
-            --bg: #0d0d0d;
-            --box: #1a1a1a;
-            --border: #333;
-        }
-        body {
-            background: var(--bg);
-            color: #ddd;
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            padding: 5px;
-            user-select: none;
-            font-size: 14px;
-        }
-        .box {
-            background: var(--box);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            margin: 5px auto;
-            max-width: 500px;
-        }
-        .bar-bg {
-            width: 100%;
-            height: 18px;
-            background: #222;
-            border-radius: 4px;
-            margin: 3px 0;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid #444;
-        }
-        .bar-fill {
-            height: 100%;
-            transition: width 0.3s;
-        }
-        .bar-text {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            font-size: 10px;
-            font-weight: bold;
-            line-height: 18px;
-            color: #fff;
-            z-index: 2;
-            text-shadow: 1px 1px #000;
-        }
-        .tabs {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 3px;
-            margin: 10px 0;
-        }
-        .tab-btn {
-            padding: 10px 2px;
-            background: #222;
-            border: 1px solid #444;
-            color: #888;
-            font-size: 9px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .tab-active {
-            background: var(--gold);
-            color: #000;
-            font-weight: bold;
-            border-color: var(--gold);
-        }
-        .btn {
-            background: var(--gold);
-            color: #000;
-            border: none;
-            padding: 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin: 5px 0;
-        }
-        #log {
-            height: 80px;
-            overflow-y: auto;
-            font-size: 10px;
-            color: #aaa;
-            background: #000;
-            padding: 5px;
-            border-top: 1px solid #222;
-        }
-        .mob-box {
-            background: #200;
-            border: 1px solid #800;
-            padding: 10px;
-            border-radius: 6px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
+        :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0d0d0d; --box: #1a1a1a; --border: #333; }
+        body { background: var(--bg); color: #ddd; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 5px; user-select: none; font-size: 14px; }
+        .box { background: var(--box); padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin: 5px auto; max-width: 500px; }
+        .bar-bg { width: 100%; height: 18px; background: #222; border-radius: 4px; margin: 3px 0; overflow: hidden; position: relative; border: 1px solid #444; }
+        .bar-fill { height: 100%; transition: width 0.3s; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; color: #fff; z-index: 2; text-shadow: 1px 1px #000; }
+        .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin: 10px 0; }
+        .tab-btn { padding: 10px 2px; background: #222; border: 1px solid #444; color: #888; font-size: 9px; border-radius: 4px; cursor: pointer; }
+        .tab-active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); }
+        .btn { background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; margin: 5px 0; }
+        #log { height: 100px; overflow-y: auto; font-size: 10px; color: #aaa; background: #000; padding: 5px; border-top: 1px solid #222; }
+        .mob-box { background: #200; border: 1px solid #800; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -182,8 +95,8 @@ function addLog(message) {
 
 function updateUI() {
     if (!userData) return;
-    const maxHp = 100 + userData.vit * 10;
-    const maxSt = 100 + userData.str * 5;
+    const maxHp = 100 + (userData.vit * 10);
+    const maxSt = 100 + (userData.str * 5);
 
     document.getElementById('r-lvl').innerText = userData.level || 1;
     document.getElementById('r-gold').innerText = Math.floor(userData.gold || 0);
@@ -206,6 +119,7 @@ function initSupabase() {
         return false;
     }
     sb = supabase.createClient(S_URL, S_KEY);
+    addLog('Supabase инициализирован');
     return true;
 }
 
@@ -220,7 +134,7 @@ async function auth(mode) {
     msg.innerHTML = 'Подождите...';
 
     if (!sb && !initSupabase()) {
-        msg.innerHTML = 'Ошибка инициализации Supabase';
+        msg.innerHTML = 'Ошибка Supabase';
         isAuthInProgress = false;
         return;
     }
@@ -249,7 +163,7 @@ async function auth(mode) {
                 options: { data: { username: nick } }
             });
             if (error) throw error;
-            msg.innerHTML = `Герой "${nick}" создан!<br>Теперь войдите.`;
+            msg.innerHTML = `Герой "${nick}" создан! Теперь войдите.`;
             addLog(`Регистрация: ${nick}`);
         } else {
             const { data: { session }, error } = await sb.auth.signInWithPassword({
@@ -257,7 +171,7 @@ async function auth(mode) {
                 password: pass
             });
             if (error) throw error;
-            addLog(`Вход: ${nick}`);
+            addLog(`Вход выполнен: ${nick}`);
             await loadPlayerData();
         }
     } catch (err) {
@@ -268,24 +182,48 @@ async function auth(mode) {
     }
 }
 
+// ────────────────────────────────────────────────
+// ЗАГРУЗКА ДАННЫХ ГЕРОЯ (с логами и таймаутом)
+// ────────────────────────────────────────────────
 async function loadPlayerData() {
-    const msg = document.getElementById('auth-msg');
-    msg.innerHTML = 'Загрузка героя...';
+    addLog("1. Начало загрузки героя");
 
     try {
-        const { data: { user } } = await sb.auth.getUser();
-        if (!user) throw new Error('Нет активной сессии');
+        const { data: { user }, error: authErr } = await sb.auth.getUser();
+        if (authErr || !user) {
+            addLog("Нет пользователя: " + (authErr?.message || "нет user"));
+            return;
+        }
+        addLog("2. Пользователь найден, uid: " + user.id);
 
-        const username = user.user_metadata?.username;
-        if (!username) throw new Error('Ник не найден в профиле');
+        const username = user.user_metadata?.username || user.email?.split('@')[0];
+        if (!username) {
+            addLog("Никнейм не найден");
+            return;
+        }
+        addLog("3. Username: " + username);
 
-        let { data, error } = await sb.from('users')
+        addLog("4. Запрос к таблице users...");
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        const { data, error } = await sb
+            .from('users')
             .select('*')
             .eq('username', username)
-            .single();
+            .single()
+            .abortSignal(controller.signal);
 
-        if (error || !data) {
-            // Создаём нового
+        clearTimeout(timeoutId);
+
+        if (error) {
+            addLog("Ошибка запроса: " + error.message + " (код: " + (error.code || '?') + ")");
+            return;
+        }
+
+        if (!data) {
+            addLog("5. Герой не найден — создаём нового");
             const initial = {
                 username,
                 current_hp: 150,
@@ -301,26 +239,29 @@ async function loadPlayerData() {
                 inventory: [{name:'Ржавый нож', str:2, icon:'🔪'}, {name:'Тряпки', vit:2, icon:'👕'}]
             };
             const { error: insErr } = await sb.from('users').insert(initial);
-            if (insErr) throw insErr;
-            data = initial;
-            addLog('Создан новый герой');
+            if (insErr) {
+                addLog("Ошибка создания героя: " + insErr.message);
+                return;
+            }
+            userData = initial;
+            addLog("Новый герой создан");
         } else {
-            addLog('Герой загружен');
+            userData = data;
+            addLog("6. Герой загружен успешно");
         }
-
-        userData = data;
 
         document.getElementById('auth-ui').style.display = 'none';
         document.getElementById('game-ui').style.display = 'block';
         startApp();
+
     } catch (err) {
-        msg.innerHTML = 'Ошибка загрузки: ' + err.message;
-        addLog('Ошибка loadPlayerData: ' + err.message);
+        addLog("Критическая ошибка: " + err.message);
+        console.error(err);
     }
 }
 
 // ────────────────────────────────────────────────
-// ИГРОВЫЕ ФУНКЦИИ
+// ОСНОВНОЙ ЦИКЛ ИГРЫ
 // ────────────────────────────────────────────────
 function startApp() {
     updateUI();
@@ -331,14 +272,14 @@ function startApp() {
 
 async function saveData() {
     if (!userData || !sb) return;
-    await sb.from('users').update(userData).eq('username', userData.username);
-    addLog('Сохранено');
+    const { error } = await sb.from('users').update(userData).eq('username', userData.username);
+    if (!error) addLog("Сохранено");
 }
 
 function setTab(t) {
     curTab = t;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-    document.getElementById('t-' + t).classList.add('tab-active');
+    document.getElementById('t-'+t).classList.add('tab-active');
 
     const c = document.getElementById('tab-content');
 
@@ -351,7 +292,7 @@ function setTab(t) {
             <button class="btn" style="background:#444;color:#fff" onclick="travel('Лагерь')">🛖 Лагерь</button>`;
     } else if (t === 'fight') {
         if (userData.location === 'Лагерь') {
-            c.innerHTML = '<p style="text-align:center;padding:60px 0">В лагере монстров нет</p>';
+            c.innerHTML = '<p style="padding:60px 0;text-align:center">В лагере монстров нет</p>';
         } else {
             renderFight();
         }
@@ -365,7 +306,7 @@ function setTab(t) {
                 <button onclick="buyPot()">Купить</button>
             </div>`;
     } else if (t === 'stat') {
-        c.innerHTML = '<p style="text-align:center;padding:60px 0">ТОП скоро появится...</p>';
+        c.innerHTML = '<p style="padding:60px 0;text-align:center">ТОП скоро...</p>';
     }
 }
 
@@ -483,7 +424,7 @@ function tick() {
 }
 
 // ────────────────────────────────────────────────
-// СТАРТ
+// ЗАПУСК
 // ────────────────────────────────────────────────
 window.addEventListener('load', () => {
     if (initSupabase()) {
