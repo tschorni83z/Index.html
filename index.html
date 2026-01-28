@@ -6,34 +6,39 @@
     <title>МИР ТЬМЫ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #080808; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 5px; }
-        .box { background: #121212; padding: 12px; border-radius: 12px; border: 1px solid #2a2a2a; max-width: 450px; margin: 8px auto; }
-        .btn { width: 100%; padding: 12px; background: #ffcc00; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; transition: 0.2s; }
-        .btn:disabled { background: #222; color: #555; }
-        .tabs { display: flex; gap: 4px; margin-bottom: 8px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
-        .tab-btn { padding: 10px 15px; background: #1a1a1a; color: #777; border: 1px solid #333; border-radius: 6px; font-size: 11px; cursor: pointer; }
-        .tab-active { background: #ffcc00; color: #000; font-weight: bold; border-color: #ffcc00; }
+        :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0a0a0a; --box: #151515; }
+        body { background: var(--bg); color: #eee; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 5px; user-select: none; }
+        .box { background: var(--box); padding: 12px; border-radius: 12px; border: 1px solid #333; max-width: 450px; margin: 8px auto; }
         
-        .bar-container { width: 100%; height: 10px; background: #222; border-radius: 5px; margin: 4px 0; overflow: hidden; border: 1px solid #333; }
-        .hp-fill { height: 100%; background: #cc3333; transition: 0.3s; }
-        .st-fill { height: 100%; background: #33cc33; transition: 0.3s; }
+        /* Статус-бар */
+        .res-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; font-size: 12px; }
+        .res-item { background: #000; padding: 5px; border-radius: 6px; border: 1px solid #222; }
         
-        .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
-        .inv-slot { background: #000; border: 1px solid #333; aspect-ratio: 1/1; border-radius: 4px; font-size: 9px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .durability { position: absolute; bottom: 1px; right: 1px; font-size: 7px; color: #ff4444; }
-        
-        #log { background: #000; border: 1px solid #222; padding: 8px; height: 90px; overflow-y: auto; font-size: 11px; text-align: left; color: #888; border-radius: 6px; margin-top: 8px; }
+        .bar-bg { width: 100%; height: 12px; background: #222; border-radius: 6px; margin: 5px 0; overflow: hidden; border: 1px solid #333; position: relative; }
+        .bar-fill { height: 100%; transition: 0.4s; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 9px; font-weight: bold; line-height: 12px; color: #fff; }
+
+        /* Кнопки и Табы */
+        .btn { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .btn:disabled { background: #333; color: #666; }
+        .tabs { display: flex; gap: 4px; overflow-x: auto; padding: 5px 0; }
+        .tab-btn { flex: 1; min-width: 80px; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; cursor: pointer; }
+        .tab-active { background: var(--gold); color: #000; font-weight: bold; }
+
+        /* Списки */
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; font-size: 14px; }
+        #log { background: #000; border: 1px solid #222; padding: 10px; height: 80px; overflow-y: auto; font-size: 11px; text-align: left; color: #aaa; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <h1 style="color: #ffcc00;">МИР ТЬМЫ</h1>
+    <h2 style="color: var(--gold); margin: 10px;">МИР ТЬМЫ</h2>
     <div class="box">
-        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:85%; padding:10px; margin-bottom:8px; background:#000; border:1px solid #333; color:#fff;">
-        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:10px; background:#000; border:1px solid #333; color:#fff;">
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:85%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff;">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:12px; background:#000; border:1px solid #444; color:#fff;">
         <button class="btn" onclick="auth('login')">ВОЙТИ</button>
-        <button class="btn" style="background:none; color:#ffcc00; border:1px solid #ffcc00; margin-top:8px;" onclick="auth('reg')">СОЗДАТЬ ГЕРОЯ</button>
+        <button class="btn" style="background:none; color:var(--gold); border:1px solid var(--gold);" onclick="auth('reg')">СОЗДАТЬ ГЕРОЯ</button>
     </div>
 </div>
 
@@ -42,22 +47,20 @@
     const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
     const sb = window.supabase.createClient(S_URL, S_KEY);
 
-    let user, data = {}, isBusy = false, currentTab = 'mine';
+    let user, data = {}, isBusy = false, currentTab = 'world', currentLoc = 'Лагерь';
 
     async function auth(mode) {
         const n = document.getElementById('u_nick').value.trim();
         const p = document.getElementById('u_pass').value.trim();
         if(mode === 'reg') {
-            await sb.from('users').insert({ id: crypto.randomUUID(), username: n, email_hidden: p, equip: { weapon: 'Ржавый нож', tool: 'Старая кирка' }, durability: { weapon: 100, tool: 100 } });
+            await sb.from('users').insert({ id: crypto.randomUUID(), username: n, email_hidden: p, stamina: 100, gold: 50, inv: { pot_hp: 1 } });
             alert("Герой создан!");
         } else {
             const { data: u } = await sb.from('users').select('*').eq('username', n).single();
             if (u && u.email_hidden === p) {
-                user = n; data = u;
-                localStorage.setItem('rpg_user', n);
-                localStorage.setItem('rpg_pass', p);
+                user = n; data = u; localStorage.setItem('rpg_user', n); localStorage.setItem('rpg_pass', p);
                 renderGame(); setInterval(regen, 30000);
-            } else alert("Ошибка!");
+            } else alert("Ошибка входа!");
         }
     }
 
@@ -66,88 +69,101 @@
         const maxSt = 100 + (data.str * 5);
         document.getElementById('game-container').innerHTML = `
             <div class="box">
-                <div style="display:flex; justify-content:space-between; font-size:11px;">
-                    <span>❤️ HP: ${data.current_hp}/${maxHp}</span>
-                    <span>🔋 ST: ${data.stamina}/${maxSt}</span>
-                    <span>💰 ${data.gold}</span>
+                <div class="res-row">
+                    <div class="res-item">💰 ${data.gold}</div>
+                    <div class="res-item">🌲 ${data.wood || 0}</div>
+                    <div class="res-item">🪨 ${data.stone || 0}</div>
+                    <div class="res-item">⛏️ ${data.iron || 0}</div>
+                    <div class="res-item">⬛ ${data.coal || 0}</div>
+                    <div class="res-item">🔱 ${data.steel_ingot || 0}</div>
                 </div>
-                <div class="bar-container"><div class="hp-fill" style="width:${(data.current_hp/maxHp)*100}%"></div></div>
-                <div class="bar-container"><div class="st-fill" style="width:${(data.stamina/maxSt)*100}%"></div></div>
+                <div class="bar-bg"><div class="bar-text">HP: ${data.current_hp}/${maxHp}</div><div class="bar-fill" style="width:${(data.current_hp/maxHp)*100}%; background:var(--hp)"></div></div>
+                <div class="bar-bg"><div class="bar-text">ST: ${data.stamina}/${maxSt}</div><div class="bar-fill" style="width:${(data.stamina/maxSt)*100}%; background:var(--st)"></div></div>
             </div>
 
             <div class="tabs">
-                <button class="tab-btn ${currentTab==='mine'?'tab-active':''}" onclick="setTab('mine')">ЛОКАЦИИ</button>
-                <button class="tab-btn ${currentTab==='inv'?'tab-active':''}" onclick="setTab('inv')">ИНВЕНТАРЬ</button>
-                <button class="tab-btn ${currentTab==='craft'?'tab-active':''}" onclick="setTab('craft')">КУЗНИЦА</button>
+                <button class="tab-btn ${currentTab==='world'?'tab-active':''}" onclick="setTab('world')">МИР</button>
+                <button class="tab-btn ${currentTab==='mine'?'tab-active':''}" onclick="setTab('mine')">ДОБЫЧА</button>
                 <button class="tab-btn ${currentTab==='shop'?'tab-active':''}" onclick="setTab('shop')">МАГАЗИН</button>
+                <button class="tab-btn ${currentTab==='inv'?'tab-active':''}" onclick="setTab('inv')">ГЕРОЙ</button>
             </div>
             <div id="tab-content">${renderTab()}</div>
-            <div id="log">...</div>
+            <div id="log">Текущая локация: ${currentLoc}</div>
         `;
     }
 
     function renderTab() {
-        if(currentTab === 'mine') return `
+        if(currentTab === 'world') return `
             <div class="box">
-                <h3>ДОБЫЧА</h3>
-                <button class="btn" onclick="mine('wood')" ${isBusy?'disabled':''}>РУБИТЬ ЛЕС (-15 ST)</button>
-                <button class="btn" onclick="mine('iron')" ${isBusy?'disabled':''}>ДОБЫВАТЬ РУДУ (-20 ST)</button>
+                <h3>ЛОКАЦИИ</h3>
+                <div class="list-item"><span>🌲 Дикий Лес</span> <button onclick="travel('Дикий Лес', 5)" class="tab-btn">ИДТИ (5с)</button></div>
+                <div class="list-item"><span>⛏️ Мрачная Шахта</span> <button onclick="travel('Шахта', 10)" class="tab-btn">ИДТИ (10с)</button></div>
+                <div class="list-item"><span>⚖️ Рынок</span> <button onclick="travel('Рынок', 3)" class="tab-btn">ИДТИ (3с)</button></div>
             </div>`;
-        if(currentTab === 'inv') {
-            let eq = data.equip || {};
-            let dur = data.durability || {};
-            return `<div class="box">
-                <h3>СНАРЯЖЕНИЕ</h3>
-                <div class="inv-grid">
-                    <div class="inv-slot">🧤<br>${eq.gloves || 'Пусто'}</div>
-                    <div class="inv-slot">🪖<br>${eq.helmet || 'Пусто'}</div>
-                    <div class="inv-slot">🧥<br>${eq.body || 'Пусто'}</div>
-                    <div class="inv-slot">⚔️<br>${eq.weapon || 'Руки'}<span class="durability">${dur.weapon||0}%</span></div>
-                    <div class="inv-slot">⛏️<br>${eq.tool || 'Пусто'}<span class="durability">${dur.tool||0}%</span></div>
-                    <div class="inv-slot">👖<br>${eq.belt || 'Пусто'}</div>
-                    <div class="inv-slot">👢<br>${eq.boots || 'Пусто'}</div>
-                    <div class="inv-slot">💍<br>Кольцо</div>
-                </div>
-                <button class="btn" onclick="logout()" style="background:#333; color:#eee; margin-top:10px;">ВЫЙТИ</button>
+        
+        if(currentTab === 'mine') {
+            if(currentLoc === 'Лагерь' || currentLoc === 'Рынок') return `<div class="box"><p>Здесь нечего добывать. Иди в Лес или Шахту!</p></div>`;
+            return `
+            <div class="box">
+                <h3>ДОБЫЧА: ${currentLoc}</h3>
+                <button class="btn" onclick="mine('wood')" ${isBusy?'disabled':''}>СОБИРАТЬ РЕСУРСЫ (-15 ST)</button>
             </div>`;
         }
-        if(currentTab === 'craft') return `
+
+        if(currentTab === 'shop') return `
             <div class="box">
-                <h3>КУЗНЯ</h3>
-                <div style="font-size:11px; text-align:left;">
-                    ⚒️ <b>Стальной Шлем</b> (50 Стали, 1000💰)<br>
-                    ⚒️ <b>Кираса Тьмы</b> (100 Стали, 5000💰)
-                </div>
-                <button class="btn" onclick="craft('dark_plate')">СКРАФТИТЬ КИРАСУ</button>
+                <h3>МАГАЗИН</h3>
+                <div class="list-item"><span>🧪 Зелье HP (50💰)</span> <button onclick="buy('pot_hp', 50)" class="tab-btn">КУПИТЬ</button></div>
+                <div class="list-item"><span>⚡ Эликсир ST (40💰)</span> <button onclick="buy('pot_st', 40)" class="tab-btn">КУПИТЬ</button></div>
+                <hr>
+                <h3>ПРОДАЖА</h3>
+                <button class="btn" onclick="sellAll()" style="background:#444; color:#fff;">ПРОДАТЬ ВСЕ РЕСУРСЫ</button>
             </div>`;
-        return `<div class="box"><h3>МАГАЗИН</h3><button class="btn" onclick="repair()">ПОЧИНИТЬ ВСЁ (100💰)</button></div>`;
+
+        return `<div class="box"><h3>ИНВЕНТАРЬ</h3><p>Зелья HP: ${data.inv?.pot_hp || 0}</p><p>Зелья ST: ${data.inv?.pot_st || 0}</p><button class="btn" onclick="logout()">ВЫЙТИ</button></div>`;
     }
 
-    async function mine(res) {
-        let cost = res === 'wood' ? 15 : 20;
-        if(data.stamina < cost) return alert("Вы устали!");
-        if(data.durability.tool <= 0) return alert("Инструмент сломан!");
-        
+    async function travel(name, time) {
+        if(isBusy) return;
         isBusy = true; renderGame();
-        addLog("Добыча...");
-        
+        addLog(`Переход в ${name}...`);
+        setTimeout(() => {
+            currentLoc = name;
+            isBusy = false;
+            renderGame();
+            addLog(`Прибыл в ${name}`);
+        }, time * 1000);
+    }
+
+    async function mine(type) {
+        if(data.stamina < 15) return alert("Нет энергии!");
+        isBusy = true; renderGame();
         setTimeout(async () => {
-            data.stamina -= cost;
-            data.durability.tool -= 5;
+            data.stamina -= 15;
+            let res = currentLoc === 'Дикий Лес' ? 'wood' : 'iron';
             data[res] = (data[res] || 0) + 1;
             await sb.from('users').update(data).eq('username', user);
             isBusy = false; renderGame();
-            addLog(`Получено: ${res}. Прочность инструмента: ${data.durability.tool}%`);
+            addLog(`Добыто: ${res}`);
         }, 2000);
     }
 
-    async function repair() {
-        if(data.gold < 100) return alert("Нет денег!");
-        data.gold -= 100;
-        data.durability = { weapon: 100, tool: 100 };
+    async function sellAll() {
+        let gain = (data.wood || 0) * 2 + (data.iron || 0) * 5;
+        if(gain === 0) return alert("Нечего продавать!");
+        data.gold += gain;
+        data.wood = 0; data.iron = 0;
         await sb.from('users').update(data).eq('username', user);
         renderGame();
-        addLog("Снаряжение починено!");
+        addLog(`Продано ресурсов на ${gain}💰`);
+    }
+
+    async function buy(item, price) {
+        if(data.gold < price) return alert("Нет золота!");
+        data.gold -= price;
+        data.inv[item] = (data.inv[item] || 0) + 1;
+        await sb.from('users').update({ gold: data.gold, inv: data.inv }).eq('username', user);
+        renderGame();
     }
 
     function addLog(m) { const l = document.getElementById('log'); if(l) l.innerHTML = `> ${m}<br>` + l.innerHTML; }
@@ -155,14 +171,8 @@
     function logout() { localStorage.clear(); location.reload(); }
 
     async function regen() {
-        const maxHp = 100 + (data.vit * 10);
-        const maxSt = 100 + (data.str * 5);
-        if(data.current_hp < maxHp) data.current_hp += 2;
-        if(data.stamina < maxSt) data.stamina += 5;
-        if(user) {
-            renderGame();
-            await sb.from('users').update({ stamina: data.stamina, current_hp: data.current_hp }).eq('username', user);
-        }
+        if(data.stamina < 100) data.stamina += 5;
+        if(user) { renderGame(); await sb.from('users').update({ stamina: data.stamina }).eq('username', user); }
     }
 
     window.onload = async () => {
