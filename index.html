@@ -10,45 +10,45 @@
         body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; }
         
         #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; }
-        .auth-form h2 { color: var(--gold); text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
-        .auth-form input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; }
+        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; box-shadow: 0 0 15px rgba(241,196,15,0.1); }
+        .auth-form h2 { color: var(--gold); text-align: center; margin-bottom: 20px; text-transform: uppercase; font-size: 20px; }
         
-        .auth-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .auth-tabs button.active { background: var(--gold); color: #000; border: none; }
+        .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .auth-tabs button { flex: 1; background: #111; border: 1px solid #444; color: #888; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .auth-tabs button.active { background: var(--gold); color: #000; border-color: var(--gold); }
 
-        .btn-main { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
-        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
-        #auth-msg { font-size: 11px; text-align: center; margin-top: 12px; min-height: 20px; line-height: 1.4; }
+        .auth-form input { width: 100%; padding: 14px; margin: 8px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .auth-form input:focus { border-color: var(--gold); outline: none; }
 
-        /* Игровой интерфейс */
+        .btn-main { width: 100%; padding: 15px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 15px; text-transform: uppercase; font-size: 14px; }
+        .btn-main:disabled { opacity: 0.5; }
+
+        #auth-msg { font-size: 12px; text-align: center; margin-top: 15px; min-height: 20px; line-height: 1.4; }
+
+        /* Игра */
         #game-ui { display: none; }
-        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
-        .bar-bg { height: 14px; background: #222; border-radius: 7px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
+        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); }
+        .bar-bg { height: 14px; background: #222; border-radius: 7px; overflow: hidden; margin: 5px 0; position: relative; border: 1px solid #333; }
         .fill { height: 100%; transition: 0.4s; width: 0%; }
         .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 14px; color: #fff; z-index: 2; font-weight: bold; }
-        
-        .screen { display: none; padding: 15px; } .active { display: block; }
-        #log { height: 100px; overflow-y: auto; background: #000; padding: 10px; font-size: 11px; border: 1px solid var(--border); margin: 10px; color: #00ff00; font-family: monospace; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 65px; }
-        .nav-item { flex: 1; text-align: center; padding: 12px; font-size: 10px; color: #555; cursor: pointer; }
-        .nav-item.active { color: var(--gold); background: #111; }
+        #log { height: 120px; overflow-y: auto; background: #000; padding: 10px; font-size: 12px; border: 1px solid var(--border); margin: 10px; color: #0f0; font-family: monospace; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
         <div class="auth-form">
-            <h2>Tschorni Online</h2>
+            <h2>Tschorni Game</h2>
             <div class="auth-tabs">
                 <button id="tab-login" class="active" onclick="setAuthMode('login')">ВХОД</button>
                 <button id="tab-reg" onclick="setAuthMode('reg')">РЕГИСТРАЦИЯ</button>
             </div>
             
-            <input type="text" id="auth-nick" placeholder="Никнейм">
-            <input type="email" id="auth-email" placeholder="Email" style="display:none;">
-            <input type="password" id="auth-pass" placeholder="Пароль">
+            <div id="inputs">
+                <input type="text" id="auth-nick" placeholder="Никнейм">
+                <input type="email" id="auth-email" placeholder="Ваш Email" style="display:none;">
+                <input type="password" id="auth-pass" placeholder="Пароль">
+            </div>
             
             <button class="btn-main" onclick="handleAuth()" id="auth-btn">ВОЙТИ</button>
             <div id="auth-msg"></div>
@@ -57,46 +57,50 @@
 
     <div id="game-ui">
         <div class="header">
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:5px;">
-                <b id="ui-nick">Загрузка...</b>
+            <div style="display:flex; justify-content:space-between; padding:5px; color:var(--gold);">
+                <b id="ui-nick">---</b>
                 <b>💰 <span id="gold">0</span></b>
             </div>
-            <div class="bar-bg"><div class="bar-txt">❤️ <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
-            <div class="bar-bg"><div class="bar-txt">💪 <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
+            <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/100</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
         </div>
-        
         <div id="log"></div>
-
-        <div id="scr-town" class="screen active">
-            <div style="background:var(--panel); padding:20px; border-radius:8px; border:1px solid var(--border); text-align:center;">
-                <p>Вы находитесь в городе.</p>
-                <button class="btn-main" onclick="addLog('Вы осмотрели окрестности...')">Осмотреться</button>
-                <button class="btn-main" onclick="logout()" style="background:#222; color:#888; margin-top:20px;">ВЫЙТИ ИЗ АККАУНТА</button>
-            </div>
-        </div>
-
-        <div class="nav-bar">
-            <div class="nav-item active">🏙️<br>Город</div>
-            <div class="nav-item" onclick="addLog('Карта будет доступна скоро...')">🧭<br>Мир</div>
-            <div class="nav-item" onclick="addLog('Инвентарь в разработке...')">👤<br>Герой</div>
+        <div style="padding:20px; text-align:center;">
+            <button class="btn-main" onclick="logout()" style="background:#222; color:#fff;">ВЫЙТИ</button>
         </div>
     </div>
 
     <script>
+        // Инициализация Supabase
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
         const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        let p = null;
         let authMode = 'login';
 
+        // --- ИСПРАВЛЕННОЕ ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ---
         function setAuthMode(mode) {
             authMode = mode;
-            document.getElementById('tab-login').className = mode === 'login' ? 'active' : '';
-            document.getElementById('tab-reg').className = mode === 'reg' ? 'active' : '';
-            document.getElementById('auth-email').style.display = mode === 'reg' ? 'block' : 'none';
-            document.getElementById('auth-btn').innerText = mode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ';
-            document.getElementById('auth-msg').innerText = "";
+            
+            // Кнопки вкладок
+            const tLogin = document.getElementById('tab-login');
+            const tReg = document.getElementById('tab-reg');
+            const emailInput = document.getElementById('auth-email');
+            const authBtn = document.getElementById('auth-btn');
+            const msg = document.getElementById('auth-msg');
+
+            msg.innerText = ""; // Очистка ошибок при переключении
+
+            if (mode === 'reg') {
+                tReg.classList.add('active');
+                tLogin.classList.remove('active');
+                emailInput.style.display = 'block'; // Показываем Email
+                authBtn.innerText = 'ЗАРЕГИСТРИРОВАТЬСЯ';
+            } else {
+                tLogin.classList.add('active');
+                tReg.classList.remove('active');
+                emailInput.style.display = 'none'; // Прячем Email
+                authBtn.innerText = 'ВОЙТИ';
+            }
         }
 
         async function handleAuth() {
@@ -113,47 +117,43 @@
 
             btn.disabled = true;
             msg.style.color = "#fff";
-            msg.innerText = "Подождите...";
+            msg.innerText = "Обработка...";
 
             try {
                 if (authMode === 'reg') {
-                    // 1. Проверка ника
-                    const { data: nickExists } = await supabase.from('users').select('username').eq('username', nick).single();
-                    if (nickExists) throw new Error("Этот никнейм уже занят!");
-
-                    // 2. Регистрация в Auth
+                    // РЕГИСТРАЦИЯ
                     const { data: authData, error: authError } = await supabase.auth.signUp({
                         email: email,
                         password: pass,
                         options: { data: { nickname: nick } }
                     });
+
                     if (authError) throw authError;
 
-                    // 3. Создание профиля в public.users
                     if (authData.user) {
                         const { error: dbError } = await supabase.from('users').insert({
                             id: authData.user.id,
                             username: nick,
                             email_hidden: email,
-                            save_data: { username: nick, hp: 100, st: 100, gold: 100, lvl: 1 }
+                            save_data: { username: nick, hp: 100, gold: 100 }
                         });
                         if (dbError) throw dbError;
                     }
 
                     msg.style.color = "var(--green)";
-                    msg.innerText = "Успех! Подтвердите Email в письме и войдите.";
+                    msg.innerText = "Успех! Подтвердите почту (проверьте СПАМ) и войдите под ником.";
                 } else {
                     // ВХОД
-                    const { data: userData, error: userError } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                    if (userError || !userData) throw new Error("Никнейм не найден!");
+                    const { data: uData, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
+                    if (uErr || !uData) throw new Error("Никнейм не найден!");
 
-                    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-                        email: userData.email_hidden,
+                    const { data: logData, error: logErr } = await supabase.auth.signInWithPassword({
+                        email: uData.email_hidden,
                         password: pass
                     });
-                    if (loginError) throw loginError;
+                    if (logErr) throw logErr;
 
-                    loadPlayerData(loginData.user);
+                    loadGame(logData.user);
                 }
             } catch (err) {
                 msg.style.color = "var(--red)";
@@ -163,27 +163,17 @@
             }
         }
 
-        async function loadPlayerData(user) {
-            const { data, error } = await supabase.from('users').select('*').eq('id', user.id).single();
-            if (error || !data) {
-                console.error("Ошибка загрузки данных профиля");
-                return;
+        async function loadGame(user) {
+            const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
+            if (data) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
+                document.getElementById('ui-nick').innerText = data.save_data.username;
+                document.getElementById('gold').innerText = data.save_data.gold;
+                document.getElementById('hp-val').innerText = data.save_data.hp + "/100";
+                document.getElementById('hp-fill').style.width = data.save_data.hp + "%";
+                addLog("Добро пожаловать в игру!");
             }
-            p = data.save_data;
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'block';
-            updateUI();
-            addLog("Вы вошли как " + p.username);
-        }
-
-        function updateUI() {
-            if (!p) return;
-            document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = p.gold;
-            document.getElementById('hp-val').innerText = p.hp + "/100";
-            document.getElementById('hp-fill').style.width = p.hp + "%";
-            document.getElementById('st-val').innerText = p.st + "/100";
-            document.getElementById('st-fill').style.width = p.st + "%";
         }
 
         function addLog(m) {
@@ -197,10 +187,9 @@
             location.reload();
         }
 
-        // Авто-вход при наличии сессии
         window.onload = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if (session) loadPlayerData(session.user);
+            if (session) loadGame(session.user);
         };
     </script>
 </body>
