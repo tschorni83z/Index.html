@@ -3,36 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>МИР ТЬМЫ: RPG</title>
+    <title>МИР ТЬМЫ: ONLINE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0a0a0a; --box: #151515; }
         body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 5px; user-select: none; }
-        .box { background: var(--box); padding: 12px; border-radius: 12px; border: 1px solid #333; max-width: 450px; margin: 8px auto; }
+        .box { background: var(--box); padding: 10px; border-radius: 12px; border: 1px solid #333; max-width: 500px; margin: 5px auto; }
         
-        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 10px; font-size: 11px; }
-        .res-item { background: #000; padding: 6px; border-radius: 6px; border: 1px solid #222; text-align: center; color: var(--gold); }
+        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; font-size: 11px; }
+        .res-item { background: #000; padding: 5px; border-radius: 6px; border: 1px solid #222; text-align: center; color: var(--gold); }
         
-        .bar-bg { width: 100%; height: 18px; background: #222; border-radius: 9px; margin: 5px 0; overflow: hidden; border: 1px solid #333; position: relative; }
+        .bar-bg { width: 100%; height: 16px; background: #222; border-radius: 8px; margin: 4px 0; overflow: hidden; border: 1px solid #333; position: relative; }
         .bar-fill { height: 100%; transition: width 0.3s; width: 0%; }
-        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; color: #fff; z-index: 2; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 16px; color: #fff; z-index: 2; }
 
         #action-box { display: none; margin: 10px 0; }
-        .proc-bg { width: 100%; height: 24px; background: #000; border: 1px solid var(--gold); border-radius: 12px; overflow: hidden; position: relative; }
+        .proc-bg { width: 100%; height: 20px; background: #000; border: 1px solid var(--gold); border-radius: 10px; overflow: hidden; position: relative; }
         .proc-fill { height: 100%; background: var(--gold); width: 0%; }
-        .proc-text { position: absolute; width: 100%; text-align: center; line-height: 24px; font-size: 12px; color: #000; font-weight: bold; }
+        .proc-text { position: absolute; width: 100%; text-align: center; line-height: 20px; font-size: 11px; color: #000; font-weight: bold; }
 
-        .btn { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 13px; }
+        .chat-container { display: flex; gap: 5px; height: 150px; margin-top: 10px; }
+        .online-list { width: 90px; background: #000; border: 1px solid #333; border-radius: 8px; font-size: 10px; padding: 5px; overflow-y: auto; color: #00ff88; text-align: left; }
+        .chat-box { flex: 1; background: #000; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column; }
+        #chat-msgs { flex: 1; overflow-y: auto; padding: 5px; font-size: 11px; text-align: left; }
+        .chat-input-area { display: flex; border-top: 1px solid #333; }
+        #chat-in { flex: 1; background: none; border: none; color: #fff; padding: 6px; font-size: 12px; }
+
+        .btn { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 12px; }
         .btn:disabled { background: #333; color: #666; }
-        .btn-sell { background: #444; color: #fff; padding: 5px 10px; width: auto; font-size: 11px; }
-
         .tabs { display: flex; gap: 4px; margin: 10px 0; }
-        .tab-btn { flex: 1; padding: 12px 5px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; cursor: pointer; }
+        .tab-btn { flex: 1; padding: 10px 2px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; cursor: pointer; }
         .tab-active { background: var(--gold); color: #000; font-weight: bold; }
 
-        .market-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #222; font-size: 13px; }
-        #log { background: #000; border: 1px solid #222; padding: 10px; height: 90px; overflow-y: auto; font-size: 12px; color: #aaa; border-radius: 8px; text-align: left; }
-        .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        #log { background: #000; border: 1px solid #222; padding: 8px; height: 80px; overflow-y: auto; font-size: 11px; color: #aaa; border-radius: 8px; text-align: left; margin-top: 10px; }
+        .time { color: #555; margin-right: 5px; }
+        .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
         .slot { background: #000; border: 1px solid #444; aspect-ratio: 1/1; border-radius: 6px; font-size: 9px; display: flex; align-items: center; justify-content: center; text-align: center; }
     </style>
 </head>
@@ -44,7 +49,7 @@
         <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:85%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff; border-radius:8px;">
         <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:12px; margin-bottom:10px; background:#000; border:1px solid #444; color:#fff; border-radius:8px;">
         <button class="btn" onclick="auth('login')">ВОЙТИ</button>
-        <button class="btn" style="background:none; color:var(--gold); border:1px solid var(--gold);" onclick="auth('reg')">СОЗДАТЬ ГЕРОЯ</button>
+        <button class="btn" style="background:none; color:var(--gold); border:1px solid var(--gold);" onclick="auth('reg')">РЕГИСТРАЦИЯ</button>
     </div>
 </div>
 
@@ -62,42 +67,43 @@
         if(mode === 'reg') {
             await sb.from('users').insert({ 
                 username: n, email_hidden: p, current_hp: 100, stamina: 100, gold: 100, 
-                str: 5, vit: 5, agi: 5, int: 5, wood: 0, iron: 0, coal: 0, steel: 0,
-                equip: { helmet: "Нет", body: "Рубаха", weapon: "Кулаки", tool: "Кирка" },
-                last_seen: new Date().toISOString() 
+                str: 5, vit: 5, agi: 5, int: 5, wood: 0, iron: 0, coal: 0,
+                equip: { helmet: "Нет", body: "Ткань", weapon: "Кулаки", tool: "Кирка" },
+                location: 'Лагерь', last_seen: new Date().toISOString() 
             });
-            alert("Герой создан!");
+            alert("Регистрация завершена!");
         } else {
             const { data: u } = await sb.from('users').select('*').eq('username', n).single();
             if (u && u.email_hidden === p) {
-                user = n; data = u; renderGame();
-                setInterval(autoSave, 15000); setInterval(regenTick, 2000);
-            }
+                user = n; data = u; 
+                renderGame();
+                initChat();
+                setInterval(autoSave, 10000); 
+                setInterval(regenTick, 2000);
+                setInterval(updateOnline, 5000);
+            } else alert("Ошибка входа!");
         }
     }
 
     function renderGame() {
-        const maxHp = 100 + (data.vit * 10);
-        const maxSt = 100 + (data.str * 5);
-        
+        if(!user) return;
+        // Защита от NaN: если значения отсутствуют, ставим базу
+        const curSt = Number(data.stamina) || 0;
+        const maxSt = 100 + ((Number(data.str) || 5) * 5);
+        const curHp = Number(data.current_hp) || 0;
+        const maxHp = 100 + ((Number(data.vit) || 5) * 10);
+
         document.getElementById('game-container').innerHTML = `
             <div class="box">
                 <div class="res-grid">
-                    <div class="res-item">💰 ${Math.floor(data.gold)}</div>
+                    <div class="res-item">💰 ${Math.floor(data.gold || 0)}</div>
                     <div class="res-item">🌲 ${data.wood||0}</div>
                     <div class="res-item">⛏️ ${data.iron||0}</div>
                     <div class="res-item">⬛ ${data.coal||0}</div>
-                    <div class="res-item">🔱 ${data.steel||0}</div>
-                    <div class="res-item">🛡️ Ур.${data.level||1}</div>
+                    <div class="res-item">📍 ${currentLoc}</div>
                 </div>
-                <div class="bar-bg">
-                    <div class="bar-text">❤️ HP: ${Math.floor(data.current_hp)} / ${maxHp}</div>
-                    <div class="bar-fill" style="width:${(data.current_hp/maxHp)*100}%; background:var(--hp)"></div>
-                </div>
-                <div class="bar-bg">
-                    <div class="bar-text">🔋 ST: ${Math.floor(data.stamina)} / ${maxSt}</div>
-                    <div class="bar-fill" style="width:${(data.stamina/maxSt)*100}%; background:var(--st)"></div>
-                </div>
+                <div class="bar-bg"><div class="bar-text">❤️ HP: ${Math.floor(curHp)} / ${maxHp}</div><div class="bar-fill" style="width:${(curHp/maxHp)*100}%; background:var(--hp)"></div></div>
+                <div class="bar-bg"><div class="bar-text">🔋 ST: ${Math.floor(curSt)} / ${maxSt}</div><div class="bar-fill" style="width:${(curSt/maxSt)*100}%; background:var(--st)"></div></div>
                 <div id="action-box"><div class="proc-bg"><div id="proc-fill" class="proc-fill"></div><div id="proc-text" class="proc-text">0%</div></div></div>
             </div>
 
@@ -107,81 +113,51 @@
                 <button class="tab-btn ${currentTab==='hero'?'tab-active':''}" onclick="setTab('hero')">ГЕРОЙ</button>
                 <button class="tab-btn ${currentTab==='shop'?'tab-active':''}" onclick="setTab('shop')">РЫНОК</button>
             </div>
-            <div id="tab-content">${renderTab()}</div>
-            <div id="log">Локация: ${currentLoc}</div>
+            <div id="tab-content">${renderTabContent()}</div>
+
+            <div class="box chat-container">
+                <div class="online-list" id="online-list">Загрузка...</div>
+                <div class="chat-box">
+                    <div id="chat-msgs"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-in" placeholder="Сообщение или /pay ник сумма" onkeypress="if(event.key==='Enter') sendChat()">
+                    </div>
+                </div>
+            </div>
+            <div id="log"></div>
         `;
     }
 
-    function renderTab() {
+    function renderTabContent() {
         if(currentTab === 'world') return `
             <div class="box">
                 <button class="btn" onclick="startAction('travel', 'Лес', 5000)">🌲 В ЛЕС (5с)</button>
                 <button class="btn" onclick="startAction('travel', 'Шахта', 8000)">⛏️ В ШАХТУ (8с)</button>
                 <button class="btn" style="background:#444; color:#fff;" onclick="startAction('travel', 'Лагерь', 3000)">🛖 В ЛАГЕРЬ</button>
             </div>`;
-        
-        if(currentTab === 'mine') {
-            if(currentLoc === 'Лагерь') return `<div class="box">Здесь нет ресурсов. Иди в Лес или Шахту.</div>`;
-            return `<div class="box"><button class="btn" onclick="startAction('mine', '${currentLoc}', 4000)">ДОБЫВАТЬ (-20 ST)</button></div>`;
-        }
-
+        if(currentTab === 'mine') return `
+            <div class="box">
+                ${currentLoc==='Лагерь'?'<p>Здесь пусто.</p>':`<button class="btn" onclick="startAction('mine', '${currentLoc}', 4000)">ДОБЫВАТЬ (-20 ST)</button>`}
+            </div>`;
         if(currentTab === 'hero') return `
             <div class="box">
-                <h3>ПЕРСОНАЖ</h3>
                 <div class="inv-grid">
-                    <div class="slot">🪖<br>${data.equip.helmet}</div>
-                    <div class="slot">🧥<br>${data.equip.body}</div>
-                    <div class="slot">⚔️<br>${data.equip.weapon}</div>
-                    <div class="slot">⛏️<br>${data.equip.tool}</div>
+                    <div class="slot">🪖<br>${data.equip?.helmet || 'Нет'}</div>
+                    <div class="slot">🧥<br>${data.equip?.body || 'Ткань'}</div>
+                    <div class="slot">⚔️<br>${data.equip?.weapon || 'Кулаки'}</div>
+                    <div class="slot">⛏️<br>${data.equip?.tool || 'Кирка'}</div>
                 </div>
-                <div style="margin-top:12px; font-size:12px; text-align:left; border-top:1px solid #333; padding-top:10px;">
-                    <b>💪 Сила:</b> ${data.str} <br>
-                    <b>🎯 Ловкость:</b> ${data.agi} <br>
-                    <b>🧠 Интеллект:</b> ${data.int} <br>
-                    <b>🩸 Живучесть:</b> ${data.vit}
+                <div style="font-size:12px; margin-top:10px; text-align:left; line-height:1.6;">
+                    💪 СИЛ: ${data.str||5} | 🎯 ЛОВ: ${data.agi||5}<br>
+                    🧠 ИНТ: ${data.int||5} | 🩸 ЖИВ: ${data.vit||5}
                 </div>
             </div>`;
-
         if(currentTab === 'shop') return `
             <div class="box">
-                <h3>ПРОДАЖА</h3>
-                ${renderMarketSell('Дерево', 'wood', 3)}
-                ${renderMarketSell('Железо', 'iron', 10)}
-                ${renderMarketSell('Уголь', 'coal', 6)}
-                <h3 style="margin-top:15px;">ПОКУПКА</h3>
-                <div class="market-item"><span>🧪 Зелье HP (+30)</span><button class="btn btn-sell" onclick="buyItem('hp', 50)">50💰</button></div>
-                <div class="market-item"><span>⚡ Зелье ST (+50)</span><button class="btn btn-sell" onclick="buyItem('st', 40)">40💰</button></div>
+                <button class="btn" onclick="sellItem('wood', 3)">Продать Дерево (3💰)</button>
+                <button class="btn" onclick="sellItem('iron', 10)">Продать Железо (10💰)</button>
+                <button class="btn" onclick="buyItem('hp', 50)">Зелье HP (50💰)</button>
             </div>`;
-    }
-
-    function renderMarketSell(label, key, price) {
-        return `<div class="market-item">
-            <span>${label} (${data[key]||0})</span>
-            <div>
-                <button class="btn btn-sell" onclick="sellItem('${key}', 1, ${price})">1 шт.</button>
-                <button class="btn btn-sell" onclick="sellItem('${key}', 'all', ${price})">Все</button>
-            </div>
-        </div>`;
-    }
-
-    async function sellItem(key, amt, price) {
-        let count = amt === 'all' ? data[key] : amt;
-        if(count > 0 && data[key] >= count) {
-            data.gold += count * price;
-            data[key] -= count;
-            renderGame();
-            addLog(`💰 Продано: ${count} шт. за ${count*price} золота.`);
-        }
-    }
-
-    async function buyItem(type, cost) {
-        if(data.gold >= cost) {
-            data.gold -= cost;
-            if(type === 'hp') data.current_hp = Math.min(100+(data.vit*10), data.current_hp+30);
-            if(type === 'st') data.stamina = Math.min(100+(data.str*5), data.stamina+50);
-            renderGame();
-            addLog(`🧪 Использовано зелье ${type.toUpperCase()}.`);
-        } else alert("Недостаточно золота!");
     }
 
     function startAction(type, target, duration) {
@@ -189,88 +165,99 @@
         isBusy = true; renderGame();
         document.getElementById('action-box').style.display = 'block';
         let start = Date.now();
-        let eventOnce = false;
-
         let interval = setInterval(() => {
             let elapsed = Date.now() - start;
             let percent = Math.min(100, Math.floor((elapsed / duration) * 100));
             document.getElementById('proc-fill').style.width = percent + '%';
             document.getElementById('proc-text').innerText = percent + '%';
-
-            if(percent >= 50 && !eventOnce) {
-                eventOnce = true;
-                if(Math.random() < 0.2) handleEvent(type);
-            }
-
             if(elapsed >= duration) {
                 clearInterval(interval);
-                finishAction(type, target);
+                isBusy = false;
+                document.getElementById('action-box').style.display = 'none';
+                if(type === 'travel') { currentLoc = target; addLog(`Прибыл в ${target}`); }
+                else { 
+                    data.stamina -= 20; 
+                    let key = currentLoc === 'Лес' ? 'wood' : 'iron';
+                    data[key] = (data[key]||0) + 1;
+                    addLog(`Добыто: ${key} +1`);
+                }
+                renderGame();
             }
         }, 100);
     }
 
-    function handleEvent(type) {
-        if(type === 'travel') {
-            const dmg = Math.max(5, 15 - Math.floor(data.agi/2));
-            data.current_hp -= dmg;
-            addLog(`⚔️ В пути напал монстр! Получено ${dmg} урона.`, 'red');
-        } else {
-            if(Math.random() < 0.4) {
-                data.coal = (data.coal || 0) + 1;
-                addLog("⬛ Вы нашли кусок угля в породе!", "green");
-            }
-        }
-        renderGame();
+    async function initChat() {
+        sb.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => showMsg(p.new)).subscribe();
+        const { data: msgs } = await sb.from('messages').select('*').order('created_at', { ascending: false }).limit(15);
+        if(msgs) msgs.reverse().forEach(showMsg);
     }
 
-    async function finishAction(type, target) {
-        isBusy = false;
-        document.getElementById('action-box').style.display = 'none';
-        if(type === 'travel') {
-            currentLoc = target;
-            addLog(`📍 Вы прибыли в ${target}.`);
+    async function sendChat() {
+        const inp = document.getElementById('chat-in');
+        const val = inp.value.trim();
+        if(!val) return;
+        
+        if(val.startsWith('/pay ')) {
+            const parts = val.split(' ');
+            const target = parts[1];
+            const amount = parseInt(parts[2]);
+            if(target && amount > 0 && data.gold >= amount) {
+                data.gold -= amount;
+                await sb.from('users').update({ gold: data.gold }).eq('username', user);
+                const { data: tData } = await sb.from('users').select('gold').eq('username', target).single();
+                if(tData) {
+                    await sb.from('users').update({ gold: tData.gold + amount }).eq('username', target);
+                    await sb.from('messages').insert({ user: 'СИСТЕМА', text: `${user} передал ${amount}💰 игроку ${target}`, loc: 'Мир' });
+                }
+            }
         } else {
-            data.stamina -= 20;
-            let key = currentLoc === 'Лес' ? 'wood' : 'iron';
-            let bonus = (Math.random()*100 < data.int*3) ? 2 : 1;
-            data[key] = (data[key] || 0) + bonus;
-            addLog(`✅ Добыто: ${target==='Лес'?'Дерево':'Железо'} +${bonus}`);
+            await sb.from('messages').insert({ user: user, text: val, loc: currentLoc });
         }
-        renderGame();
+        inp.value = '';
+    }
+
+    function showMsg(m) {
+        const box = document.getElementById('chat-msgs');
+        if(!box) return;
+        const time = new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        box.innerHTML += `<div><span class="time">${time}</span><b>${m.user}:</b> ${m.text}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    async function updateOnline() {
+        const { data: users } = await sb.from('users').select('username, location, last_seen');
+        const list = document.getElementById('online-list');
+        if(!list) return;
+        const now = new Date();
+        const local = users.filter(u => u.location === currentLoc && (now - new Date(u.last_seen)) < 40000);
+        list.innerHTML = `<b>ОНЛАЙН:</b><br>` + local.map(u => (u.username === user ? `<u>${u.username}</u>` : u.username)).join('<br>');
+    }
+
+    function addLog(m) {
+        const l = document.getElementById('log');
+        if(!l) return;
+        l.innerHTML = `<div><span class="time">[${new Date().toLocaleTimeString()}]</span> ${m}</div>` + l.innerHTML;
     }
 
     function regenTick() {
         if(isBusy) return;
-        const mHp = 100 + (data.vit*10); 
-        const mSt = 100 + (data.str*5);
-        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, data.current_hp + 0.4);
-        if(data.stamina < mSt) data.stamina = Math.min(mSt, data.stamina + 0.9);
+        const mHp = 100 + ((data.vit||5)*10); 
+        const mSt = 100 + ((data.str||5)*5);
+        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, (data.current_hp||0) + 0.6);
+        if(data.stamina < mSt) data.stamina = Math.min(mSt, (data.stamina||0) + 1.2);
         renderGame();
     }
 
     async function autoSave() {
         if(!user) return;
+        data.location = currentLoc;
         data.last_seen = new Date().toISOString();
         await sb.from('users').update(data).eq('username', user);
     }
 
-    function addLog(m, c) {
-        const l = document.getElementById('log');
-        l.innerHTML = `<span style="color:${c||'#aaa'}">> ${m}</span><br>` + l.innerHTML;
-        l.scrollTop = 0;
-    }
-    
-    function setTab(t) { if(!isBusy) { currentTab = t; renderGame(); } }
-    window.onload = async () => {
-        const n = localStorage.getItem('rpg_user'), p = localStorage.getItem('rpg_pass');
-        if(n && p) {
-            const { data: u } = await sb.from('users').select('*').eq('username', n).single();
-            if (u && u.email_hidden === p) {
-                user = n; data = u; renderGame();
-                setInterval(autoSave, 15000); setInterval(regenTick, 2000);
-            }
-        }
-    };
+    function setTab(t) { currentTab = t; renderGame(); updateOnline(); }
+    async function sellItem(k, p) { if(data[k]>0){ data[k]--; data.gold+=p; addLog(`Продано ${k} за ${p}💰`); renderGame(); } }
+    async function buyItem(t, c) { if(data.gold>=c){ data.gold-=c; data.current_hp=Math.min(100+(data.vit||5)*10, data.current_hp+30); renderGame(); } }
 </script>
 </body>
 </html>
