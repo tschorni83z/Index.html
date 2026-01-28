@@ -5,38 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TSCHORNI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #ffcc00; font-weight: bold; border: none; border-radius: 8px; margin-top: 10px; }
-        #st { margin-top: 20px; color: #888; }
-    </style>
 </head>
-<body>
+<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif;">
 
-    <h2>TSCHORNI</h2>
-    <input type="text" id="ni" placeholder="Ник">
-    <input type="password" id="pa" placeholder="Пароль">
+    <h2>TSCHORNI DEBUG</h2>
     
-    <button onclick="go('login')">ВОЙТИ</button>
-    <button onclick="go('reg')" style="background:none; color:#ffcc00; border:1px solid #ffcc00;">РЕГИСТРАЦИЯ</button>
+    <input type="text" id="ni" placeholder="Ник" style="width:80%; padding:15px; margin:10px;">
+    <input type="password" id="pa" placeholder="Пароль" style="width:80%; padding:15px; margin:10px;">
+    
+    <button onclick="go('login')" style="width:80%; padding:15px; background:#ffcc00; font-weight:bold;">ВОЙТИ</button>
+    <button onclick="go('reg')" style="width:80%; padding:15px; background:none; color:#ffcc00; border:1px solid #ffcc00; margin-top:10px;">РЕГИСТРАЦИЯ</button>
 
-    <div id="st">Статус: Жду нажатия</div>
+    <p id="st" style="color:#888; margin-top:20px;">Статус: Жду клика...</p>
 
     <script>
+        // Данные проекта
         const URL = "https://xgnzgapvvulizxtqdyzn.supabase.co";
         const KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
         const supabase = window.supabase.createClient(URL, KEY);
 
         async function go(mode) {
-            // Сразу выводим сообщение, чтобы проверить работу кнопки
-            document.getElementById('st').innerText = "Кнопка нажата: " + mode;
-            
+            // ПРОВЕРКА: Если это сработает, значит JS живой
+            alert("Нажато: " + mode); 
+            document.getElementById('st').innerText = "Обработка...";
+
             const nick = document.getElementById('ni').value.trim();
             const pass = document.getElementById('pa').value.trim();
 
             if (!nick || !pass) return alert("Заполни поля!");
-
             const mail = nick.toLowerCase() + "@tschorni-game.com";
 
             try {
@@ -47,7 +43,7 @@
                     if (data.user) {
                         await supabase.from('users').insert({ id: data.user.id, username: nick, email_hidden: mail });
                     }
-                    alert("Успех! Теперь жми ВОЙТИ.");
+                    alert("Регистрация успешна! Теперь входи.");
                 } else {
                     const { data: u, error: uE } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
                     if (!u || uE) throw new Error("Ник не найден");
@@ -55,8 +51,7 @@
                     const { error: lE } = await supabase.auth.signInWithPassword({ email: u.email_hidden, password: pass });
                     if (lE) throw lE;
 
-                    alert("ТЫ В ИГРЕ!");
-                    document.body.innerHTML = "<h1>ПРИВЕТ, " + nick + "!</h1>";
+                    alert("УРА! ТЫ В ИГРЕ!");
                 }
             } catch (e) {
                 alert("ОШИБКА: " + e.message);
