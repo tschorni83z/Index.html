@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Carnage: Mobile Legacy</title>
+    <title>Carnage: Levels & Mobs</title>
     <style>
         :root { --gold: #f1c40f; --bg: #111; --panel: #222; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --border: #444; }
         body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; user-select: none; }
@@ -15,70 +15,80 @@
         .screen { display: none; } .active { display: block; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         button { padding: 12px; background: #3c3c3c; color: #eee; border: 1px solid #555; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); z-index: 20; }
         .nav-item { flex: 1; padding: 15px 5px; text-align: center; font-size: 10px; color: #888; }
         .nav-item.active { color: var(--gold); background: #1a1a1a; }
-        #log { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; color: #aaa; margin-bottom: 10px; border: 1px solid var(--border); }
-        .item-card { background: #1a1a1a; border: 1px solid #444; padding: 10px; border-radius: 5px; text-align: center; margin-bottom: 8px; }
-        .slot { background: #111; border: 1px dashed #555; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 6px; }
+        #log { height: 120px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; color: #aaa; margin-bottom: 10px; border: 1px solid var(--border); line-height: 1.4; }
+        .btn-move { background: #2c3e50; border-color: var(--blue); }
+        #scr-battle { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 20px; text-align: center; display:none; }
+        #scr-battle.active { display: block; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:5px;">
-            <b id="ui-nick">Загрузка...</b>
+            <b id="ui-nick">Герой</b>
             <b>💰 <span id="gold">0</span></b>
         </div>
         <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
         <div class="bar-bg"><div class="bar-txt">🌟 EXP: <span id="exp-val">0/0</span></div><div id="exp-fill" class="fill" style="background:var(--blue)"></div></div>
+        <div style="text-align:center; font-size:10px; margin-top:5px;">Уровень: <b id="ui-lvl">1</b></div>
     </div>
 
     <div class="content" style="padding:10px;">
         <div id="log"></div>
 
-        <div id="scr-town" class="screen">
-            <h3 style="text-align:center; color:var(--gold)">🏙️ Площадь Города</h3>
+        <div id="scr-town" class="screen active">
+            <h3 style="text-align:center; color:var(--gold)">🏘️ Центральный Город</h3>
             <div class="grid">
-                <button onclick="openBuild('shop')">🛒 МАГАЗИН</button>
-                <button onclick="openBuild('hospital')">🏥 БОЛЬНИЦА</button>
-                <button onclick="move('forest_1')">🌲 В ЛЕС</button>
-                <button onclick="openBuild('bank')">🏛️ БАНК</button>
+                <button onclick="openBuild('shop')">🛒 Магазин</button>
+                <button onclick="openBuild('hospital')">🏥 Больница</button>
             </div>
+            <h4 style="text-align:center; margin: 15px 0 5px 0;">Выходы:</h4>
+            <button class="btn-move" style="width:100%" onclick="move('forest_1')">🌲 Опушка леса (LVL 0+)</button>
         </div>
 
+        <div id="scr-world" class="screen">
+            <h3 id="loc-name" style="text-align:center;">Локация</h3>
+            <div id="loc-nav" class="grid"></div>
+            <div style="height:10px;"></div>
+            <div id="loc-actions">
+                <button style="width:100%; background:var(--red);" onclick="hunt()">⚔️ ИСКАТЬ ВРАГА</button>
+            </div>
+            <button style="width:100%; margin-top:10px; background:#111;" onclick="move('town')">🏘️ Вернуться в город</button>
+        </div>
+
+        <div id="scr-char" class="screen panel">
+            <h4 style="margin:0 0 10px 0; color:var(--gold);">👤 Характеристики</h4>
+            <div id="stat-points" style="color:var(--green); font-size:12px; margin-bottom:10px;">Свободные очки: 0</div>
+            <div id="stat-list"></div>
+        </div>
+        
         <div id="scr-shop" class="screen">
-            <h3 style="color:var(--gold); text-align:center;">🛒 Лавка Купца</h3>
+            <h3 style="color:var(--gold); text-align:center;">🛒 Магазин</h3>
             <div id="shop-list"></div>
             <button style="width:100%; margin-top:10px;" onclick="move('town')">❌ Выйти</button>
         </div>
+    </div>
 
-        <div id="scr-char" class="screen">
-            <div class="panel">
-                <h4 style="margin:0 0 10px 0; color:var(--gold);">👤 Снаряжение</h4>
-                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                    <div class="slot" id="slot-neck" title="Шея">➖</div>
-                    <div class="slot" id="slot-head" title="Голова">➖</div>
-                    <div class="slot" id="slot-weapon" title="Оружие">➖</div>
-                </div>
-            </div>
-            <div class="panel">
-                <h4 style="margin:0 0 10px 0; color:var(--blue);">🎒 Рюкзак (Инвентарь)</h4>
-                <div id="inventory-list" class="grid"></div>
-            </div>
-        </div>
-
-        <div id="scr-hospital" class="screen panel">
-            <h3 style="color:var(--red); text-align:center;">🏥 Больница</h3>
-            <p style="text-align:center;">Доктор восстановит силы за 10 золотых.</p>
-            <button style="width:100%" onclick="healPlayer()">Лечиться (10💰)</button>
-            <button style="width:100%; margin-top:10px;" onclick="move('town')">Назад</button>
+    <div id="scr-battle">
+        <h2 style="color:var(--red)">⚔️ БИТВА</h2>
+        <div id="en-img" style="font-size:60px; margin: 20px 0;">👹</div>
+        <h3 id="en-name">Монстр</h3>
+        <div style="font-size:12px; margin-bottom:5px;">Уровень: <span id="en-lvl">0</span></div>
+        <div class="bar-bg" style="width:80%; margin: 0 auto;"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
+        <div class="grid" style="max-width:300px; margin: 30px auto;">
+            <button onclick="hit('head')">Голова</button>
+            <button onclick="hit('body')">Торс</button>
+            <button onclick="hit('legs')" style="grid-column: span 2;">Ноги</button>
         </div>
     </div>
 
     <div class="nav-bar">
         <div class="nav-item active" id="nav-town" onclick="move('town')">🏙️<br>Город</div>
-        <div class="nav-item" id="nav-wild" onclick="move('forest_1')">🌲<br>Лес</div>
+        <div class="nav-item" id="nav-wild" onclick="move('forest_1')">🗺️<br>Мир</div>
         <div class="nav-item" id="nav-char" onclick="openChar()">👤<br>Герой</div>
     </div>
 
@@ -86,35 +96,176 @@
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
 
-        // Инициализация данных (загрузка из памяти или дефолт)
         let p = JSON.parse(localStorage.getItem('last_user_save')) || { 
-            username: "Герой", hp: 100, gold: 100, exp: 0, lvl: 1, 
-            str: 5, agi: 5, vit: 5, int: 5, 
-            loc: 'town',
-            equip: { weapon: null, head: null, neck: null },
-            inventory: [] 
+            username: "Герой", hp: 100, gold: 50, exp: 0, lastExpPoint: 0, lvl: 1, points: 5,
+            str: 5, agi: 5, vit: 5, int: 5, loc: 'town',
+            equip: { weapon: null }, inventory: [] 
         };
 
-        const gTime = () => new Intl.DateTimeFormat('ru-RU', {timeZone:'Europe/Berlin', hour:'2-digit', minute:'2-digit', second:'2-digit'}).format(new Date());
+        let enemy = null;
+        const gTime = () => new Intl.DateTimeFormat('ru-RU', {timeZone:'Europe/Berlin', hour:'2-digit', minute:'2-digit'}).format(new Date());
 
-        const itemsDB = {
-            'sw1': { id: 'sw1', name: 'Деревянный нож', type: 'weapon', cost: 30, stat: 'str', val: 2, icon: '🔪' },
-            'sw2': { id: 'sw2', name: 'Меч Ополченца', type: 'weapon', cost: 150, stat: 'str', val: 8, icon: '⚔️' },
-            'hm1': { id: 'hm1', name: 'Кожаная шапка', type: 'head', cost: 40, stat: 'vit', val: 3, icon: '🪖' },
-            'nk1': { id: 'nk1', name: 'Зуб волка', type: 'neck', cost: 80, stat: 'agi', val: 4, icon: '📿' }
+        // База локаций
+        const world = {
+            'town': { name: 'Город', links: ['forest_1'], minLvl: 0 },
+            'forest_1': { name: 'Опушка леса', links: ['town', 'forest_2'], minLvl: 0, 
+                mobs: [{n:'Крыса', i:'🐀', hp:40, dmg:5, lvl:1, exp:10, g:5}] },
+            'forest_2': { name: 'Густая чаща', links: ['forest_1', 'cave'], minLvl: 3, 
+                mobs: [{n:'Волк', i:'🐺', hp:120, dmg:12, lvl:4, exp:35, g:15}] },
+            'cave': { name: 'Пещера орков', links: ['forest_2', 'lair'], minLvl: 6, 
+                mobs: [{n:'Орк', i:'👹', hp:350, dmg:25, lvl:7, exp:100, g:40}] },
+            'lair': { name: 'Логово Дракона', links: ['cave'], minLvl: 9, 
+                mobs: [{n:'Дракон', i:'🐉', hp:1000, dmg:60, lvl:12, exp:500, g:200}] }
         };
 
-        // --- ФУНКЦИЯ СОХРАНЕНИЯ (ТУДА, КУДА ТЫ СПРАШИВАЛ) ---
         async function save() {
             localStorage.setItem('last_user_save', JSON.stringify(p));
             try {
                 await fetch(`${SB_URL}/rest/v1/users?username=eq.${p.username}`, {
                     method: 'PATCH',
                     headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ save_data: p, last_seen: new Date().toISOString() })
+                    body: JSON.stringify({ save_data: p })
                 });
-                console.log("Сохранено в Supabase");
-            } catch(e) { console.error("Ошибка сохранения", e); }
+            } catch(e) {}
+        }
+
+        function move(locID) {
+            const loc = world[locID];
+            if(p.lvl < loc.minLvl) {
+                return addLog(`❌ Слишком опасно! Нужен уровень ${loc.minLvl}`);
+            }
+
+            p.loc = locID;
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            if(locID === 'town') {
+                document.getElementById('scr-town').classList.add('active');
+                document.getElementById('nav-town').classList.add('active');
+            } else {
+                document.getElementById('scr-world').classList.add('active');
+                document.getElementById('nav-wild').classList.add('active');
+                document.getElementById('loc-name').innerText = loc.name;
+                
+                const nav = document.getElementById('loc-nav');
+                nav.innerHTML = '';
+                loc.links.forEach(l => {
+                    const btn = document.createElement('button');
+                    btn.innerText = "➡ " + world[l].name;
+                    btn.onclick = () => move(l);
+                    nav.appendChild(btn);
+                });
+            }
+            updateUI();
+            save();
+        }
+
+        function hunt() {
+            const loc = world[p.loc];
+            if(!loc.mobs) return;
+            const m = loc.mobs[Math.floor(Math.random() * loc.mobs.length)];
+            enemy = { ...m, curHp: m.hp };
+            
+            document.getElementById('en-name').innerText = enemy.n;
+            document.getElementById('en-img').innerText = enemy.i;
+            document.getElementById('en-lvl').innerText = enemy.lvl;
+            document.getElementById('scr-battle').classList.add('active');
+            addLog(`⚔️ Враг замечен: ${enemy.n}!`);
+        }
+
+        function hit(zone) {
+            if(!enemy) return;
+            let dmg = p.str + Math.floor(Math.random() * 5);
+            enemy.curHp -= dmg;
+            addLog(`Ты ударил ${enemy.n} на ${dmg}.`);
+
+            if(enemy.curHp <= 0) {
+                addLog(`🏆 Победа! Получено ${enemy.exp} опыта и ${enemy.g} золота.`);
+                p.exp += enemy.exp; p.gold += enemy.g;
+                checkProgress();
+                return endBattle();
+            }
+
+            // Ответ моба
+            let eDmg = enemy.dmg;
+            if(Math.random() * 100 < p.agi) {
+                addLog(`🛡️ Ты увернулся от удара!`);
+            } else {
+                p.hp -= eDmg;
+                addLog(`🩸 ${enemy.n} ударил тебя на ${eDmg}.`);
+            }
+
+            if(p.hp <= 0) {
+                p.hp = 1;
+                addLog("💀 Ты проиграл и сбежал в город!");
+                endBattle();
+                move('town');
+            }
+            updateUI();
+        }
+
+        function endBattle() {
+            enemy = null;
+            document.getElementById('scr-battle').classList.remove('active');
+            updateUI();
+            save();
+        }
+
+        function checkProgress() {
+            // Очки статов каждые 50 опыта
+            if(p.exp - p.lastExpPoint >= 50) {
+                p.points += 1;
+                p.lastExpPoint += 50;
+                addLog("✨ Получено очко характеристик!");
+            }
+            // Уровень
+            let nextLvlExp = p.lvl * 150;
+            if(p.exp >= nextLvlExp) {
+                p.lvl++;
+                addLog(`🎊 УРОВЕНЬ ПОВЫШЕН: ${p.lvl}!`);
+            }
+        }
+
+        function openChar() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('scr-char').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('nav-char').classList.add('active');
+            updateUI();
+        }
+
+        function addStat(s) {
+            if(p.points > 0) {
+                p[s]++; p.points--;
+                updateUI(); save();
+            }
+        }
+
+        function updateUI() {
+            let maxHp = 100 + (p.vit * 20);
+            document.getElementById('gold').innerText = p.gold;
+            document.getElementById('ui-lvl').innerText = p.lvl;
+            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
+            document.getElementById('hp-fill').style.width = (p.hp / maxHp * 100) + "%";
+            
+            let nextExp = p.lvl * 150;
+            document.getElementById('exp-val').innerText = `${p.exp}/${nextExp}`;
+            document.getElementById('exp-fill').style.width = (p.exp / nextExp * 100) + "%";
+
+            document.getElementById('stat-points').innerText = `Свободные очки: ${p.points}`;
+            const sl = document.getElementById('stat-list');
+            sl.innerHTML = '';
+            [['Сила', 'str'], ['Ловкость', 'agi'], ['Живучесть', 'vit']].forEach(s => {
+                sl.innerHTML += `
+                <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333;">
+                    <span>${s[0]}: <b>${p[s[1]]}</b></span>
+                    ${p.points > 0 ? `<button onclick="addStat('${s[1]}')" style="padding:2px 10px; background:var(--green); color:black;">+</button>` : ''}
+                </div>`;
+            });
+
+            if(enemy) {
+                document.getElementById('en-hp-fill').style.width = (enemy.curHp / enemy.hp * 100) + "%";
+            }
         }
 
         function addLog(m) {
@@ -123,98 +274,23 @@
             l.scrollTop = l.scrollHeight;
         }
 
-        function move(loc) {
-            p.loc = loc;
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.getElementById('scr-' + (loc === 'forest_1' ? 'town' : loc)).classList.add('active');
-            document.getElementById('nav-' + (loc === 'town' ? 'town' : 'wild')).classList.add('active');
-            if(loc === 'forest_1') addLog("Вы вошли в Лес.");
-            updateUI(); save();
-        }
-
         function openBuild(type) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('scr-' + type).classList.add('active');
-            if(type === 'shop') renderShop();
-        }
-
-        function renderShop() {
-            const list = document.getElementById('shop-list');
-            list.innerHTML = '';
-            Object.values(itemsDB).forEach(it => {
-                list.innerHTML += `
-                <div class="item-card">
-                    <b>${it.icon} ${it.name}</b><br>
-                    <small>+${it.val} к ${it.stat}</small><br>
-                    <button onclick="buy('${it.id}')" style="margin-top:5px;">Купить ${it.cost}💰</button>
-                </div>`;
-            });
-        }
-
-        function buy(id) {
-            const it = itemsDB[id];
-            if(p.gold >= it.cost) {
-                p.gold -= it.cost;
-                p.inventory.push(id);
-                addLog(`Куплено: ${it.name}`);
-                save(); updateUI();
-            } else { alert("Нет денег!"); }
-        }
-
-        function openChar() {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('scr-char').classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.getElementById('nav-char').classList.add('active');
-            
-            const inv = document.getElementById('inventory-list');
-            inv.innerHTML = '';
-            p.inventory.forEach((id, idx) => {
-                const it = itemsDB[id];
-                inv.innerHTML += `
-                <div class="item-card" onclick="equip('${id}', ${idx})">
-                    ${it.icon}<br><small>Надеть</small>
-                </div>`;
-            });
-            updateUI();
-        }
-
-        function equip(id, idx) {
-            const it = itemsDB[id];
-            p.equip[it.type] = id;
-            addLog(`Вы надели ${it.name}`);
-            save(); openChar();
-        }
-
-        function healPlayer() {
-            if(p.gold >= 10) {
-                p.gold -= 10;
-                p.hp = 100 + (p.vit * 20);
-                addLog("Вы полностью исцелены!");
-                updateUI(); save();
+            if(type === 'hospital') {
+                if(p.gold >= 10) { p.gold -= 10; p.hp = 100 + (p.vit * 20); addLog("❤️ Здоровье восстановлено!"); updateUI(); }
+                else { alert("Мало золота!"); }
+            }
+            if(type === 'shop') {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById('scr-shop').classList.add('active');
             }
         }
 
-        function updateUI() {
-            let bonusVit = 0;
-            Object.values(p.equip).forEach(id => {
-                if(id && itemsDB[id]) {
-                    document.getElementById(`slot-${itemsDB[id].type}`).innerText = itemsDB[id].icon;
-                    if(itemsDB[id].stat === 'vit') bonusVit += itemsDB[id].val;
-                }
-            });
+        // Регенерация
+        setInterval(() => {
+            let maxHp = 100 + (p.vit * 20);
+            if(!enemy && p.hp < maxHp) { p.hp = Math.min(maxHp, p.hp + 2); updateUI(); }
+        }, 5000);
 
-            let maxHp = 100 + ((p.vit + bonusVit) * 20);
-            document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = p.gold;
-            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
-            document.getElementById('hp-fill').style.width = (p.hp / maxHp * 100) + "%";
-        }
-
-        // Авто-сохранение раз в минуту
-        setInterval(save, 60000);
-        
         move('town');
     </script>
 </body>
