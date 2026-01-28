@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>МИР ТЬМЫ</title>
+    <title>МИР ТЬМЫ: RPG</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --bg: #0a0a0a; --box: #151515; }
         body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 5px; user-select: none; }
         .box { background: var(--box); padding: 12px; border-radius: 12px; border: 1px solid #333; max-width: 450px; margin: 8px auto; }
         
-        /* Статусы */
         .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 10px; font-size: 11px; }
         .res-item { background: #000; padding: 6px; border-radius: 6px; border: 1px solid #222; text-align: center; color: var(--gold); }
         
@@ -18,24 +17,23 @@
         .bar-fill { height: 100%; transition: width 0.3s; width: 0%; }
         .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; color: #fff; z-index: 2; }
 
-        /* Прогресс действия */
         #action-box { display: none; margin: 10px 0; }
         .proc-bg { width: 100%; height: 24px; background: #000; border: 1px solid var(--gold); border-radius: 12px; overflow: hidden; position: relative; }
-        .proc-fill { height: 100%; background: var(--gold); width: 0%; transition: width 0.1s linear; }
+        .proc-fill { height: 100%; background: var(--gold); width: 0%; }
         .proc-text { position: absolute; width: 100%; text-align: center; line-height: 24px; font-size: 12px; color: #000; font-weight: bold; }
 
-        /* Инвентарь */
-        .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
-        .slot { background: #000; border: 1px solid #444; aspect-ratio: 1/1; border-radius: 6px; font-size: 9px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2px; }
-
-        .btn { width: 100%; padding: 15px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .btn { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 13px; }
         .btn:disabled { background: #333; color: #666; }
-        
-        .tabs { display: flex; gap: 4px; margin: 10px 0; overflow-x: auto; }
-        .tab-btn { flex: 1; min-width: 70px; padding: 12px 5px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; }
+        .btn-sell { background: #444; color: #fff; padding: 5px 10px; width: auto; font-size: 11px; }
+
+        .tabs { display: flex; gap: 4px; margin: 10px 0; }
+        .tab-btn { flex: 1; padding: 12px 5px; background: #1a1a1a; border: 1px solid #333; color: #888; border-radius: 8px; font-size: 11px; cursor: pointer; }
         .tab-active { background: var(--gold); color: #000; font-weight: bold; }
 
+        .market-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #222; font-size: 13px; }
         #log { background: #000; border: 1px solid #222; padding: 10px; height: 90px; overflow-y: auto; font-size: 12px; color: #aaa; border-radius: 8px; text-align: left; }
+        .inv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .slot { background: #000; border: 1px solid #444; aspect-ratio: 1/1; border-radius: 6px; font-size: 9px; display: flex; align-items: center; justify-content: center; text-align: center; }
     </style>
 </head>
 <body>
@@ -61,7 +59,6 @@
         const n = document.getElementById('u_nick').value.trim();
         const p = document.getElementById('u_pass').value.trim();
         if(!n || !p) return;
-
         if(mode === 'reg') {
             await sb.from('users').insert({ 
                 username: n, email_hidden: p, current_hp: 100, stamina: 100, gold: 100, 
@@ -91,7 +88,7 @@
                     <div class="res-item">⛏️ ${data.iron||0}</div>
                     <div class="res-item">⬛ ${data.coal||0}</div>
                     <div class="res-item">🔱 ${data.steel||0}</div>
-                    <div class="res-item">⚔️ Атк: ${data.str*2}</div>
+                    <div class="res-item">🛡️ Ур.${data.level||1}</div>
                 </div>
                 <div class="bar-bg">
                     <div class="bar-text">❤️ HP: ${Math.floor(data.current_hp)} / ${maxHp}</div>
@@ -124,27 +121,67 @@
             </div>`;
         
         if(currentTab === 'mine') {
-            if(currentLoc === 'Лагерь') return `<div class="box">Здесь нет ресурсов.</div>`;
-            let res = currentLoc === 'Лес' ? 'Дерево' : 'Железо/Уголь';
-            return `<div class="box"><button class="btn" onclick="startAction('mine', '${res}', 4000)">ДОБЫВАТЬ ${res} (-20 ST)</button></div>`;
+            if(currentLoc === 'Лагерь') return `<div class="box">Здесь нет ресурсов. Иди в Лес или Шахту.</div>`;
+            return `<div class="box"><button class="btn" onclick="startAction('mine', '${currentLoc}', 4000)">ДОБЫВАТЬ (-20 ST)</button></div>`;
         }
 
         if(currentTab === 'hero') return `
             <div class="box">
-                <h3>СНАРЯЖЕНИЕ</h3>
+                <h3>ПЕРСОНАЖ</h3>
                 <div class="inv-grid">
                     <div class="slot">🪖<br>${data.equip.helmet}</div>
                     <div class="slot">🧥<br>${data.equip.body}</div>
                     <div class="slot">⚔️<br>${data.equip.weapon}</div>
                     <div class="slot">⛏️<br>${data.equip.tool}</div>
                 </div>
-                <div style="margin-top:10px; font-size:12px; text-align:left;">
-                    💪 Сила: ${data.str} | 🎯 Ловкость: ${data.agi}<br>
-                    🧠 Интеллект: ${data.int} | 🩸 Живучесть: ${data.vit}
+                <div style="margin-top:12px; font-size:12px; text-align:left; border-top:1px solid #333; padding-top:10px;">
+                    <b>💪 Сила:</b> ${data.str} <br>
+                    <b>🎯 Ловкость:</b> ${data.agi} <br>
+                    <b>🧠 Интеллект:</b> ${data.int} <br>
+                    <b>🩸 Живучесть:</b> ${data.vit}
                 </div>
             </div>`;
 
-        return `<div class="box"><h3>РЫНОК</h3><button class="btn" onclick="sellAll()">ПРОДАТЬ ВСЕ РЕСУРСЫ</button></div>`;
+        if(currentTab === 'shop') return `
+            <div class="box">
+                <h3>ПРОДАЖА</h3>
+                ${renderMarketSell('Дерево', 'wood', 3)}
+                ${renderMarketSell('Железо', 'iron', 10)}
+                ${renderMarketSell('Уголь', 'coal', 6)}
+                <h3 style="margin-top:15px;">ПОКУПКА</h3>
+                <div class="market-item"><span>🧪 Зелье HP (+30)</span><button class="btn btn-sell" onclick="buyItem('hp', 50)">50💰</button></div>
+                <div class="market-item"><span>⚡ Зелье ST (+50)</span><button class="btn btn-sell" onclick="buyItem('st', 40)">40💰</button></div>
+            </div>`;
+    }
+
+    function renderMarketSell(label, key, price) {
+        return `<div class="market-item">
+            <span>${label} (${data[key]||0})</span>
+            <div>
+                <button class="btn btn-sell" onclick="sellItem('${key}', 1, ${price})">1 шт.</button>
+                <button class="btn btn-sell" onclick="sellItem('${key}', 'all', ${price})">Все</button>
+            </div>
+        </div>`;
+    }
+
+    async function sellItem(key, amt, price) {
+        let count = amt === 'all' ? data[key] : amt;
+        if(count > 0 && data[key] >= count) {
+            data.gold += count * price;
+            data[key] -= count;
+            renderGame();
+            addLog(`💰 Продано: ${count} шт. за ${count*price} золота.`);
+        }
+    }
+
+    async function buyItem(type, cost) {
+        if(data.gold >= cost) {
+            data.gold -= cost;
+            if(type === 'hp') data.current_hp = Math.min(100+(data.vit*10), data.current_hp+30);
+            if(type === 'st') data.stamina = Math.min(100+(data.str*5), data.stamina+50);
+            renderGame();
+            addLog(`🧪 Использовано зелье ${type.toUpperCase()}.`);
+        } else alert("Недостаточно золота!");
     }
 
     function startAction(type, target, duration) {
@@ -162,7 +199,7 @@
 
             if(percent >= 50 && !eventOnce) {
                 eventOnce = true;
-                if(Math.random() < 0.3) handleEvent(type);
+                if(Math.random() < 0.2) handleEvent(type);
             }
 
             if(elapsed >= duration) {
@@ -174,13 +211,13 @@
 
     function handleEvent(type) {
         if(type === 'travel') {
-            const dmg = Math.max(5, 20 - data.agi);
+            const dmg = Math.max(5, 15 - Math.floor(data.agi/2));
             data.current_hp -= dmg;
-            addLog(`⚔️ Нападение моба! Получено ${dmg} урона.`, 'red');
+            addLog(`⚔️ В пути напал монстр! Получено ${dmg} урона.`, 'red');
         } else {
-            if(Math.random() < 0.5) {
+            if(Math.random() < 0.4) {
                 data.coal = (data.coal || 0) + 1;
-                addLog("💎 Найдено немного угля!", "green");
+                addLog("⬛ Вы нашли кусок угля в породе!", "green");
             }
         }
         renderGame();
@@ -189,28 +226,25 @@
     async function finishAction(type, target) {
         isBusy = false;
         document.getElementById('action-box').style.display = 'none';
-        if(type === 'travel') currentLoc = target;
-        else {
+        if(type === 'travel') {
+            currentLoc = target;
+            addLog(`📍 Вы прибыли в ${target}.`);
+        } else {
             data.stamina -= 20;
             let key = currentLoc === 'Лес' ? 'wood' : 'iron';
-            let bonus = (Math.random()*100 < data.int*2) ? 2 : 1;
+            let bonus = (Math.random()*100 < data.int*3) ? 2 : 1;
             data[key] = (data[key] || 0) + bonus;
-            addLog(`✅ Добыто: ${target} +${bonus}`);
+            addLog(`✅ Добыто: ${target==='Лес'?'Дерево':'Железо'} +${bonus}`);
         }
         renderGame();
     }
 
-    async function sellAll() {
-        let money = (data.wood*2) + (data.iron*10) + (data.coal*5);
-        data.gold += money; data.wood = 0; data.iron = 0; data.coal = 0;
-        renderGame(); addLog(`💰 Продано на ${money} золота!`);
-    }
-
     function regenTick() {
         if(isBusy) return;
-        const mHp = 100 + (data.vit*10); const mSt = 100 + (data.str*5);
-        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, data.current_hp + 0.5);
-        if(data.stamina < mSt) data.stamina = Math.min(mSt, data.stamina + 1);
+        const mHp = 100 + (data.vit*10); 
+        const mSt = 100 + (data.str*5);
+        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, data.current_hp + 0.4);
+        if(data.stamina < mSt) data.stamina = Math.min(mSt, data.stamina + 0.9);
         renderGame();
     }
 
@@ -223,12 +257,19 @@
     function addLog(m, c) {
         const l = document.getElementById('log');
         l.innerHTML = `<span style="color:${c||'#aaa'}">> ${m}</span><br>` + l.innerHTML;
+        l.scrollTop = 0;
     }
     
     function setTab(t) { if(!isBusy) { currentTab = t; renderGame(); } }
     window.onload = async () => {
         const n = localStorage.getItem('rpg_user'), p = localStorage.getItem('rpg_pass');
-        if(n && p) auth('login');
+        if(n && p) {
+            const { data: u } = await sb.from('users').select('*').eq('username', n).single();
+            if (u && u.email_hidden === p) {
+                user = n; data = u; renderGame();
+                setInterval(autoSave, 15000); setInterval(regenTick, 2000);
+            }
+        }
     };
 </script>
 </body>
