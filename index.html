@@ -9,14 +9,16 @@
         :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --border: #333; }
         body { background: var(--bg); color: #ddd; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
         
-        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 320px; }
+        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 320px; box-shadow: 0 0 20px rgba(241, 196, 15, 0.2); }
         .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .auth-tabs button { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: #888; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .auth-tabs button { flex: 1; padding: 12px; background: #222; border: 1px solid #444; color: #888; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; }
         .auth-tabs button.active { background: var(--gold); color: #000; border: none; }
 
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #auth-msg { font-size: 12px; text-align: center; margin-top: 10px; min-height: 20px; }
+        input { width: 100%; padding: 14px; margin: 8px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--gold); }
+        
+        .btn-main { width: 100%; padding: 15px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+        #auth-msg { font-size: 12px; text-align: center; margin-top: 15px; min-height: 20px; line-height: 1.4; }
         
         #game-ui { display: none; text-align: center; }
     </style>
@@ -25,26 +27,25 @@
 
     <div id="auth-screen">
         <div class="auth-form">
-            <h2 style="text-align:center; color:var(--gold);">TSCHORNI GAME</h2>
+            <h2 style="text-align:center; color:var(--gold); margin-top:0;">TSCHORNI GAME</h2>
             
             <div class="auth-tabs">
-                <button id="btn-tab-login" class="active" onclick="toggleMode('login')">ВХОД</button>
-                <button id="btn-tab-reg" onclick="toggleMode('reg')">РЕГИСТРАЦИЯ</button>
+                <button id="tab-l" class="active" onclick="setMode('login')">ВХОД</button>
+                <button id="tab-r" onclick="setMode('reg')">РЕГИСТРАЦИЯ</button>
             </div>
             
-            <input type="text" id="inp-nick" placeholder="Никнейм">
-            <input type="email" id="inp-email" placeholder="Электронная почта" style="display:none;">
-            <input type="password" id="inp-pass" placeholder="Пароль">
+            <input type="text" id="nick" placeholder="Никнейм">
+            <input type="email" id="email" placeholder="Электронная почта" style="display:none;">
+            <input type="password" id="pass" placeholder="Пароль">
             
-            <button class="btn-main" id="main-btn" onclick="submitAuth()">ВОЙТИ</button>
+            <button class="btn-main" id="btn-auth" onclick="runAuth()">ВОЙТИ</button>
             <div id="auth-msg"></div>
         </div>
     </div>
 
     <div id="game-ui">
-        <h1 style="color:var(--gold);">ВЫ В ИГРЕ!</h1>
-        <p id="player-name"></p>
-        <button class="btn-main" onclick="location.reload()">ВЫЙТИ</button>
+        <h1 id="welcome-msg" style="color:var(--gold);"></h1>
+        <button class="btn-main" onclick="location.reload()" style="width:200px;">ВЫЙТИ</button>
     </div>
 
     <script>
@@ -52,76 +53,73 @@
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
         const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        let currentMode = 'login';
+        let mode = 'login';
 
-        // ЭТА ФУНКЦИЯ ОТВЕЧАЕТ ЗА ПОЯВЛЕНИЕ EMAIL
-        function toggleMode(mode) {
-            currentMode = mode;
-            const emailField = document.getElementById('inp-email');
-            const mainBtn = document.getElementById('main-btn');
-            const tabLogin = document.getElementById('btn-tab-login');
-            const tabReg = document.getElementById('btn-tab-reg');
-
-            if (mode === 'reg') {
-                emailField.style.display = 'block'; // ПОКАЗАТЬ EMAIL
-                mainBtn.innerText = 'ЗАРЕГИСТРИРОВАТЬСЯ';
-                tabReg.classList.add('active');
-                tabLogin.classList.remove('active');
-            } else {
-                emailField.style.display = 'none'; // СКРЫТЬ EMAIL
-                mainBtn.innerText = 'ВОЙТИ';
-                tabLogin.classList.add('active');
-                tabReg.classList.remove('active');
-            }
+        // Функция переключения Вход / Регистрация
+        function setMode(m) {
+            mode = m;
+            document.getElementById('email').style.display = (m === 'reg') ? 'block' : 'none';
+            document.getElementById('btn-auth').innerText = (m === 'reg') ? 'ЗАРЕГИСТРИРОВАТЬСЯ' : 'ВОЙТИ';
+            document.getElementById('tab-l').className = (m === 'login') ? 'active' : '';
+            document.getElementById('tab-r').className = (m === 'reg') ? 'active' : '';
+            document.getElementById('auth-msg').innerText = "";
         }
 
-        async function submitAuth() {
-            const nick = document.getElementById('inp-nick').value.trim();
-            const email = document.getElementById('inp-email').value.trim();
-            const pass = document.getElementById('inp-pass').value.trim();
+        async function runAuth() {
+            const nickVal = document.getElementById('nick').value.trim();
+            const emailVal = document.getElementById('email').value.trim();
+            const passVal = document.getElementById('pass').value.trim();
             const msg = document.getElementById('auth-msg');
 
+            if(!nickVal || !passVal || (mode === 'reg' && !emailVal)) {
+                msg.style.color = "red";
+                return msg.innerText = "Заполни все поля!";
+            }
+
+            msg.style.color = "white";
             msg.innerText = "Загрузка...";
-            msg.style.color = "#fff";
 
             try {
-                if (currentMode === 'reg') {
-                    // РЕГИСТРАЦИЯ
+                if(mode === 'reg') {
+                    // 1. Регистрация в Supabase Auth
                     const { data, error } = await supabase.auth.signUp({
-                        email: email,
-                        password: pass,
-                        options: { data: { nickname: nick } }
+                        email: emailVal,
+                        password: passVal,
+                        options: { data: { nickname: nickVal } }
                     });
-                    if (error) throw error;
+                    if(error) throw error;
 
-                    // Сохраняем ник в таблицу
-                    await supabase.from('users').insert({
+                    // 2. Создание профиля в твоей таблице public.users
+                    const { error: dbErr } = await supabase.from('users').insert({
                         id: data.user.id,
-                        username: nick,
-                        email_hidden: email,
-                        save_data: { username: nick, hp: 100, gold: 100 }
+                        username: nickVal,
+                        email_hidden: emailVal,
+                        save_data: { username: nickVal, gold: 100, hp: 100 }
                     });
+                    if(dbErr) throw dbErr;
 
-                    msg.style.color = "lightgreen";
-                    msg.innerText = "Письмо отправлено! Подтверди Email и заходи.";
+                    msg.style.color = "#2ecc71";
+                    msg.innerText = "Успех! Подтверди почту в письме и возвращайся для входа.";
                 } else {
-                    // ВХОД
-                    const { data: uData } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                    if (!uData) throw new Error("Ник не найден");
+                    // ВХОД ПО НИКУ
+                    // Ищем скрытый email по нику
+                    const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nickVal).single();
+                    if(!u || uErr) throw new Error("Ник не найден!");
 
-                    const { data: logData, error: logErr } = await supabase.auth.signInWithPassword({
-                        email: uData.email_hidden,
-                        password: pass
+                    // Логинимся через Supabase
+                    const { data: log, error: logErr } = await supabase.auth.signInWithPassword({
+                        email: u.email_hidden,
+                        password: passVal
                     });
-                    if (logErr) throw logErr;
+                    if(logErr) throw logErr;
 
-                    // Успешный вход
+                    // Успех
                     document.getElementById('auth-screen').style.display = 'none';
                     document.getElementById('game-ui').style.display = 'block';
-                    document.getElementById('player-name').innerText = "Привет, " + nick;
+                    document.getElementById('welcome-msg').innerText = "ПРИВЕТ, " + nickVal.toUpperCase() + "!";
                 }
             } catch (e) {
-                msg.style.color = "orange";
+                msg.style.color = "#e74c3c";
                 msg.innerText = e.message;
             }
         }
