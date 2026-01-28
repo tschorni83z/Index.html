@@ -4,29 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TSCHORNI GAME ONLINE</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --stamina: #9b59b6; --border: #333; }
-        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 100px; }
+        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; }
         
-        /* Экран логина */
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .auth-form { background: var(--panel); padding: 20px; border-radius: 10px; border: 1px solid var(--gold); width: 100%; max-width: 300px; }
-        .auth-form input { width: 100%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; box-sizing: border-box; }
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; }
+        .auth-form h2 { color: var(--gold); text-align: center; margin-bottom: 20px; }
+        .auth-form input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; }
+        .auth-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 8px; border-radius: 5px; cursor: pointer; }
+        .auth-tabs button.active { background: var(--gold); color: #000; border: none; }
 
         .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
-        .bar-bg { height: 12px; background: #222; border-radius: 6px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
-        .fill { height: 100%; transition: 0.3s; width: 0%; }
-        .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 9px; line-height: 12px; font-weight: bold; color: #fff; z-index: 2; }
+        .bar-bg { height: 14px; background: #222; border-radius: 7px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
+        .fill { height: 100%; transition: 0.4s; width: 0%; }
+        .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 14px; font-weight: bold; color: #fff; z-index: 2; }
         
+        .screen { display: none; padding: 10px; } .active { display: block; }
         .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-        .screen { display: none; } .active { display: block; }
+        button.primary { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
-        button { padding: 12px; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 5px; font-size: 11px; cursor: pointer; }
-        button:active { transform: scale(0.98); background: #333; }
-
-        #log, #chat-box { height: 90px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; border: 1px solid var(--border); margin-bottom: 5px; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 60px; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; }
+        #log { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; border: 1px solid var(--border); margin-bottom: 10px; color: #aaa; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 65px; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; cursor: pointer; }
         .nav-item.active { color: var(--gold); }
     </style>
 </head>
@@ -34,58 +36,56 @@
 
     <div id="auth-screen">
         <div class="auth-form">
-            <h2 style="color:var(--gold); text-align:center; margin-top:0;">TSCHORNI GAME</h2>
-            <label>Имя персонажа:</label>
-            <input type="text" id="login-name" placeholder="Введите ник...">
-            <button onclick="login()" style="width:100%; background:var(--gold); color:#000;">ВОЙТИ В ИГРУ</button>
+            <h2>TSCHORNI GAME</h2>
+            <div class="auth-tabs">
+                <button id="tab-login" class="active" onclick="setAuthMode('login')">Вход</button>
+                <button id="tab-reg" onclick="setAuthMode('reg')">Регистрация</button>
+            </div>
+            
+            <input type="email" id="auth-email" placeholder="Email">
+            <input type="password" id="auth-pass" placeholder="Пароль">
+            <input type="text" id="auth-nick" placeholder="Ник персонажа (только при регистрации)" style="display:none;">
+            
+            <button class="primary" id="auth-btn" onclick="handleAuth()">ВОЙТИ</button>
+            <p id="auth-msg" style="font-size: 11px; color: var(--red); text-align: center; margin-top: 10px;"></p>
         </div>
     </div>
 
     <div id="game-ui" style="display:none;">
         <div class="header">
-            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--gold); margin-bottom:4px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:5px;">
                 <b id="ui-nick">---</b>
                 <b>💰 <span id="gold">0</span></b>
             </div>
-            <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
-            <div class="bar-bg"><div class="bar-txt">💪 STAMINA: <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
+            <div class="bar-bg"><div class="bar-txt">❤️ <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
+            <div class="bar-bg"><div class="bar-txt">💪 <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
         </div>
 
-        <div class="content" style="padding:10px;">
-            <div id="chat-box"></div>
-            <div id="log"></div>
+        <div id="log"></div>
 
-            <div id="scr-town" class="screen">
-                <div class="panel">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        <button onclick="move('world')">⚔️ ОХОТА</button>
-                        <button onclick="move('char')">👤 ГЕРОЙ</button>
-                        <button onclick="logout()">🏃 ВЫХОД</button>
-                    </div>
+        <div id="scr-town" class="screen active">
+            <div class="panel">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <button onclick="move('world')">🧭 Карта мира</button>
+                    <button onclick="move('char')">👤 Персонаж</button>
+                    <button onclick="logout()" style="grid-column: span 2; background: #333; color: #fff; border: 1px solid #444;">ВЫЙТИ ИЗ АККАУНТА</button>
                 </div>
             </div>
+        </div>
 
-            <div id="scr-world" class="screen">
-                <button style="width:100%; height:50px; background:var(--red);" onclick="hunt()">НАЙТИ МОНСТРА</button>
-                <button style="width:100%; margin-top:10px;" onclick="move('town')">В ГОРОД</button>
-            </div>
+        <div id="scr-world" class="screen">
+            <div class="panel" id="loc-list"></div>
+            <button onclick="move('town')" style="width:100%;">В город</button>
+        </div>
 
-            <div id="scr-battle" class="screen">
-                <div class="panel" style="text-align:center;">
-                    <h3 id="en-name">Враг</h3>
-                    <div class="bar-bg"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
-                    <button onclick="battleHit()" style="width:100%; height:50px; background:var(--red); margin-top:10px;">УДАРИТЬ</button>
-                </div>
-            </div>
-
-            <div id="scr-char" class="screen">
-                <div class="panel" id="stat-info"></div>
-            </div>
+        <div id="scr-char" class="screen">
+            <div class="panel" id="char-stats"></div>
+            <button onclick="move('town')" style="width:100%;">Назад</button>
         </div>
 
         <div class="nav-bar">
             <div class="nav-item active" onclick="move('town')">🏙️<br>Город</div>
-            <div class="nav-item" onclick="move('world')">🗺️<br>Мир</div>
+            <div class="nav-item" onclick="move('world')">🧭<br>Мир</div>
             <div class="nav-item" onclick="move('char')">👤<br>Герой</div>
         </div>
     </div>
@@ -93,112 +93,93 @@
     <script>
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
+        const supabase =维持_supabase.createClient(SB_URL, SB_KEY);
 
         let p = null;
-        let lastInactivityCheck = Date.now();
+        let authMode = 'login';
 
-        // 1. ЛОГИН И ЗАГРУЗКА
-        async function login() {
-            const nick = document.getElementById('login-name').value.trim();
-            if(!nick) return alert("Введите имя!");
+        // 1. УПРАВЛЕНИЕ АВТОРИЗАЦИЕЙ
+        function setAuthMode(mode) {
+            authMode = mode;
+            document.getElementById('tab-login').className = mode === 'login' ? 'active' : '';
+            document.getElementById('tab-reg').className = mode === 'reg' ? 'active' : '';
+            document.getElementById('auth-nick').style.display = mode === 'reg' ? 'block' : 'none';
+            document.getElementById('auth-btn').innerText = mode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ';
+        }
 
-            // Ищем игрока в БД
-            const res = await fetch(`${SB_URL}/rest/v1/users?username=eq.${nick}`, {
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
-            });
-            const data = await res.json();
+        async function handleAuth() {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            const nick = document.getElementById('auth-nick').value;
+            const msg = document.getElementById('auth-msg');
+            msg.innerText = "Загрузка...";
 
-            if(data.length > 0) {
-                p = data[0].save_data;
+            if (authMode === 'reg') {
+                const { data, error } = await supabase.auth.signUp({ 
+                    email, password: pass, options: { data: { nickname: nick } } 
+                });
+                if (error) msg.innerText = "Ошибка: " + error.message;
+                else msg.style.color = 'var(--green)', msg.innerText = "Письмо отправлено! Подтвердите Email и войдите.";
             } else {
-                // Создаем нового
-                p = {
-                    username: nick, hp:100, st:100, gold:100, exp:0, lvl:1, points:5,
-                    str:5, agi:5, vit:5, int:5, loc: 'town', last_save: Date.now()
-                };
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+                if (error) {
+                    msg.innerText = error.message.includes("Email not confirmed") ? "Подтвердите Email в письме!" : "Ошибка входа!";
+                } else {
+                    loadPlayerData(data.user);
+                }
             }
+        }
 
-            calculateOfflineGain();
-            startInactivityTimer();
+        async function loadPlayerData(user) {
+            const { data } = await supabase.from('users').select('save_data').eq('id', user.id).single();
             
+            if (data) {
+                p = data.save_data;
+            } else {
+                p = { 
+                    id: user.id, username: user.user_metadata.nickname || 'Герой',
+                    hp:100, st:100, gold:100, exp:0, lvl:1, vit:5, str:5, last_save: Date.now() 
+                };
+                await save();
+            }
+            startToPlay();
+        }
+
+        function startToPlay() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            move(p.loc || 'town');
             updateUI();
-            addLog(`Приветствуем, ${p.username}!`);
+            addLog("Добро пожаловать в мир, " + p.username);
+            setInterval(save, 30000);
         }
 
-        // 2. ОФФЛАЙН ВОССТАНОВЛЕНИЕ
-        function calculateOfflineGain() {
-            const now = Date.now();
-            const diff = Math.floor((now - (p.last_save || now)) / 1000); // секунд оффлайна
-            
-            if(diff > 5) {
-                let maxHp = 100 + (p.vit * 20);
-                let hpGain = Math.floor(diff / 10); // +1 HP за 10 сек
-                let stGain = Math.floor(diff / 5);  // +1 Стамина за 5 сек
-                
-                p.hp = Math.min(maxHp, p.hp + hpGain);
-                p.st = Math.min(100, p.st + stGain);
-                addLog(`За время отсутствия восстановлено: ${hpGain} HP и ${stGain} Стамины.`);
-            }
-        }
-
-        // 3. ТАЙМЕР БЕЗДЕЙСТВИЯ (1 ЧАС)
-        function startInactivityTimer() {
-            document.addEventListener('touchstart', resetTimer);
-            document.addEventListener('click', resetTimer);
-        }
-
-        function resetTimer() {
-            lastInactivityCheck = Date.now();
-        }
-
-        setInterval(() => {
-            const passed = Date.now() - lastInactivityCheck;
-            if(passed > 3600000) { // 1 час
-                alert("Вы вышли из игры из-за бездействия.");
-                logout();
-            }
-        }, 60000); // проверка каждую минуту
-
-        function logout() {
-            save();
-            location.reload();
-        }
-
-        // 4. ГЕЙМПЛЕЙ
+        // 2. ИГРОВАЯ ЛОГИКА
         function updateUI() {
             if(!p) return;
-            let maxHp = 100 + (p.vit * 20);
-            if(maxHp <= 0) maxHp = 100; // защита от 0/0
-
+            const maxHp = 100 + p.vit * 20;
             document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = Math.floor(p.gold);
-            
+            document.getElementById('gold').innerText = p.gold;
             document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
             document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
-            
-            document.getElementById('st-val').innerText = `${Math.floor(p.st)}/100`;
+            document.getElementById('st-val').innerText = `${p.st}/100`;
             document.getElementById('st-fill').style.width = p.st+'%';
         }
 
         function move(scr) {
-            p.loc = scr;
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('scr-'+scr).classList.add('active');
             if(scr === 'char') renderChar();
             updateUI();
-            save();
         }
 
         function renderChar() {
-            document.getElementById('stat-info').innerHTML = `
-                <h3>${p.username} (${p.lvl} уровень)</h3>
-                <p>Сила: ${p.str}</p>
-                <p>Живучесть: ${p.vit}</p>
-                <p>Золото: ${p.gold}</p>
-            `;
+            document.getElementById('char-stats').innerHTML = `<h3>${p.username}</h3>Уровень: ${p.lvl}<br>Сила: ${p.str}<br>Живучесть: ${p.vit}`;
+        }
+
+        async function save() {
+            if(!p) return;
+            p.last_save = Date.now();
+            await supabase.from('users').upsert({ id: p.id, username: p.username, save_data: p });
         }
 
         function addLog(m) {
@@ -207,39 +188,16 @@
             l.scrollTop = l.scrollHeight;
         }
 
-        async function save() {
-            if(!p) return;
-            p.last_save = Date.now();
-            localStorage.setItem('tschorni_player', JSON.stringify(p));
-            
-            // Сохранение в Supabase (Upsert)
-            try {
-                await fetch(`${SB_URL}/rest/v1/users`, {
-                    method: 'POST',
-                    headers: { 
-                        "apikey": SB_KEY, 
-                        "Authorization": `Bearer ${SB_KEY}`, 
-                        "Content-Type": "application/json",
-                        "Prefer": "resolution=merge-duplicates" 
-                    },
-                    body: JSON.stringify({ username: p.username, save_data: p })
-                });
-            } catch(e) {}
+        function logout() {
+            supabase.auth.signOut();
+            location.reload();
         }
 
-        // Регенерация онлайн
-        setInterval(() => {
-            if(p && !p.enemy) {
-                let maxHp = 100 + p.vit * 20;
-                if(p.hp < maxHp) p.hp = Math.min(maxHp, p.hp + 2);
-                if(p.st < 100) p.st = Math.min(100, p.st + 5);
-                updateUI();
-            }
-        }, 5000);
-
-        // Авто-сейв каждые 30 сек
-        setInterval(save, 30000);
-
+        // Авто-проверка сессии при открытии сайта
+        window.onload = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) loadPlayerData(session.user);
+        };
     </script>
 </body>
 </html>
