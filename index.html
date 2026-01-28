@@ -3,79 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TSCHORNI: CARNAGE RPG</title>
+    <title>TSCHORNI: MOB HUNTER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #ffcc00; --hp: #ff4444; --st: #00ff88; --mp: #4488ff; --bg: #0d0d0d; --box: #1a1a1a; --border: #333; }
-        body { background: var(--bg); color: #ddd; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 5px; user-select: none; }
+        body { background: var(--bg); color: #ddd; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 5px; user-select: none; font-size: 14px; }
         .box { background: var(--box); padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin: 5px auto; max-width: 500px; }
         
         /* Бары */
-        .bar-bg { width: 100%; height: 16px; background: #222; border-radius: 4px; margin: 3px 0; overflow: hidden; position: relative; border: 1px solid #444; }
-        .bar-fill { height: 100%; transition: width 0.4s; }
-        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 9px; font-weight: bold; line-height: 16px; color: #fff; z-index: 2; text-shadow: 1px 1px #000; }
+        .bar-bg { width: 100%; height: 18px; background: #222; border-radius: 4px; margin: 3px 0; overflow: hidden; position: relative; border: 1px solid #444; }
+        .bar-fill { height: 100%; transition: width 0.3s; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; color: #fff; z-index: 2; text-shadow: 1px 1px #000; }
 
-        /* Статы */
-        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
-        .stat-item { background: #000; padding: 4px; border-radius: 4px; text-align: center; font-size: 10px; border: 1px solid #222; }
-        .stat-val { display: block; color: var(--gold); font-weight: bold; font-size: 12px; }
-
-        /* Кнопки и Табы */
+        /* Вкладки */
         .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin: 10px 0; }
         .tab-btn { padding: 10px 2px; background: #222; border: 1px solid #444; color: #888; font-size: 9px; border-radius: 4px; cursor: pointer; }
         .tab-active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); }
-        .btn-act { background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
+        .btn { background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; margin: 5px 0; }
         
-        /* Карточки предметов */
-        .card { background: #111; border: 1px solid #333; padding: 8px; border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
-        .card-icon { font-size: 22px; }
-        
-        /* Чат и Лог */
-        #chat-msgs { height: 100px; overflow-y: auto; font-size: 11px; background: #000; padding: 5px; border: 1px solid #222; }
-        #log { height: 50px; overflow-y: auto; font-size: 10px; color: #888; padding: 5px; border-top: 1px solid #222; }
+        /* Таблицы */
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        th, td { border: 1px solid #333; padding: 5px; text-align: center; }
+        th { background: #222; color: var(--gold); }
+
+        .mob-box { background: #200; border: 1px solid #800; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 10px; }
+        #log { height: 60px; overflow-y: auto; font-size: 10px; color: #aaa; background: #000; padding: 5px; border-top: 1px solid #222; }
     </style>
 </head>
 <body>
 
 <div id="auth-ui">
     <div class="box" style="margin-top: 50px; text-align: center;">
-        <h2 style="color: var(--gold)">TSCHORNI RPG</h2>
-        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:85%; padding:12px; margin:5px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
-        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:12px; margin:5px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;">
-        <button class="btn-act" onclick="auth('login')" style="margin-bottom: 10px;">ВОЙТИ В ИГРУ</button>
-        <button class="btn-act" onclick="auth('reg')" style="background: none; border: 1px solid var(--gold); color: var(--gold);">СОЗДАТЬ ГЕРОЯ</button>
+        <h2 style="color: var(--gold)">TSCHORNI: REBORN</h2>
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:85%; padding:12px; margin:5px; background:#111; border:1px solid #333; color:#fff;">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:85%; padding:12px; margin:5px; background:#111; border:1px solid #333; color:#fff;">
+        <button class="btn" onclick="auth('login')">ВОЙТИ</button>
+        <button class="btn" onclick="auth('reg')" style="background:none; border:1px solid var(--gold); color:var(--gold);">СОЗДАТЬ ГЕРОЯ + ПОДАРКИ</button>
     </div>
 </div>
 
 <div id="game-ui" style="display: none;">
     <div class="box">
-        <div class="stat-grid">
-            <div class="stat-item">💪 СИЛ<span id="s-str" class="stat-val">0</span></div>
-            <div class="stat-item">🛡️ ЖИВ<span id="s-vit" class="stat-val">0</span></div>
-            <div class="stat-item">⚡ ЛОВ<span id="s-agi" class="stat-val">0</span></div>
-            <div class="stat-item">🧠 ИНТ<span id="s-int" class="stat-val">0</span></div>
+        <div style="display:flex; justify-content: space-between; font-size: 12px; color: var(--gold); margin-bottom: 5px;">
+            <span>УРОВЕНЬ: <b id="r-lvl">1</b></span>
+            <span>ЗОЛОТО: <b id="r-gold">0</b>💰</span>
         </div>
         <div class="bar-bg"><div class="bar-text" id="hp-txt">HP</div><div id="hp-f" class="bar-fill" style="background:var(--hp);"></div></div>
         <div class="bar-bg"><div class="bar-text" id="st-txt">ST</div><div id="st-f" class="bar-fill" style="background:var(--st);"></div></div>
-        <div class="bar-bg"><div class="bar-text" id="mp-txt">MP</div><div id="mp-f" class="bar-fill" style="background:var(--mp);"></div></div>
-        <div style="font-size:11px; text-align:center; color:var(--gold); margin-top:5px;">💰 <span id="r-gold">0</span> | ⭐ EXP: <span id="r-exp">0</span></div>
     </div>
 
     <div class="tabs">
         <button class="tab-btn" id="t-world" onclick="setTab('world')">МИР</button>
-        <button class="tab-btn" id="t-fight" onclick="setTab('fight')">БОЙ</button>
+        <button class="tab-btn" id="t-fight" onclick="setTab('fight')">ОХОТА</button>
         <button class="tab-btn" id="t-inv" onclick="setTab('inv')">ГЕРОЙ</button>
         <button class="tab-btn" id="t-shop" onclick="setTab('shop')">РЫНОК</button>
-        <button class="tab-btn" id="t-craft" onclick="setTab('craft')">КРАФТ</button>
+        <button class="tab-btn" id="t-stat" onclick="setTab('stat')">ТОП</button>
     </div>
 
-    <div id="tab-content" class="box" style="min-height: 180px;"></div>
-
-    <div class="box">
-        <div id="chat-msgs"></div>
-        <input type="text" id="chat-in" placeholder="Написать..." style="width:100%; background:#111; border:none; color:#fff; padding:8px; border-top:1px solid #222;" onkeypress="if(event.key==='Enter') sendChat()">
-        <div id="log"></div>
-    </div>
+    <div id="tab-content" class="box" style="min-height: 220px;"></div>
+    <div id="log" class="box"></div>
 </div>
 
 <script>
@@ -83,21 +69,27 @@
     const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
     const sb = window.supabase.createClient(S_URL, S_KEY);
 
-    let user = null, data = {}, curTab = 'world';
+    let user = null, data = {}, curTab = 'world', enemy = null;
+
+    const MOBS = {
+        'Лес': [ { n: 'Дикий Волк', hp: 50, maxHp: 50, dmg: 5, exp: 20, gold: 10 }, { n: 'Лесной Разбойник', hp: 80, maxHp: 80, dmg: 8, exp: 40, gold: 25 } ],
+        'Шахта': [ { n: 'Каменный Слизень', hp: 100, maxHp: 100, dmg: 4, exp: 35, gold: 15 }, { n: 'Гоблин-Шахтер', hp: 150, maxHp: 150, dmg: 12, exp: 70, gold: 50 } ]
+    };
+
+    const EXP_TABLE = [0, 100, 250, 500, 1000, 2000, 4000, 8000];
 
     async function auth(mode) {
-        const n = document.getElementById('u_nick').value.trim();
-        const p = document.getElementById('u_pass').value.trim();
-        if(!n || !p) return alert("Введите данные!");
+        const n = document.getElementById('u_nick').value.trim(), p = document.getElementById('u_pass').value.trim();
+        if(!n || !p) return;
 
         if(mode === 'reg') {
             const { error } = await sb.from('users').insert({ 
-                username: n, email_hidden: p, current_hp: 150, stamina: 100, current_mp: 50,
-                gold: 100, str: 5, vit: 5, agi: 5, int: 5, exp: 0, level: 1,
-                location: 'Лагерь', inventory: [], equip: { weapon: null, armor: null }
+                username: n, email_hidden: p, current_hp: 150, stamina: 100, gold: 200,
+                str: 5, vit: 5, agi: 5, int: 5, exp: 0, level: 1, location: 'Лагерь',
+                inventory: [{name: 'Ржавый нож', str: 2, icon: '🔪'}, {name: 'Тряпки', vit: 2, icon: '👕'}]
             });
-            if(!error) alert("Герой успешно создан! Теперь войдите.");
-            else alert("Ник уже занят!");
+            if(!error) alert("Герой создан! Логин: " + n);
+            else alert("Ник занят.");
         } else {
             const { data: u } = await sb.from('users').select('*').eq('username', n).single();
             if(u && u.email_hidden === p) {
@@ -106,38 +98,22 @@
                 document.getElementById('auth-ui').style.display = 'none';
                 document.getElementById('game-ui').style.display = 'block';
                 startApp();
-            } else alert("Неверный ник или пароль!");
+            }
         }
     }
 
     function startApp() {
-        updateUI();
-        setTab('world');
+        updateUI(); setTab('world');
         setInterval(tick, 2000);
-        setInterval(save, 10000);
-        initChat();
-        addLog("Добро пожаловать в мир, " + user);
+        setInterval(() => { if(user) sb.from('users').update(data).eq('username', user) }, 10000);
     }
 
     function updateUI() {
-        // Бонусы от вещей
-        let b = { str: 0, vit: 0, agi: 0, int: 0 };
-        if(data.equip.weapon) { b.str += data.equip.weapon.str || 0; b.agi += data.equip.weapon.agi || 0; }
-        if(data.equip.armor) { b.vit += data.equip.armor.vit || 0; b.int += data.equip.armor.int || 0; }
-
-        const ts = { str: data.str + b.str, vit: data.vit + b.vit, agi: data.agi + b.agi, int: data.int + b.int };
-        const mHp = 100 + (ts.vit * 10), mSt = 100 + (ts.str * 5), mMp = 50 + (ts.int * 8);
-
-        document.getElementById('s-str').innerText = ts.str;
-        document.getElementById('s-vit').innerText = ts.vit;
-        document.getElementById('s-agi').innerText = ts.agi;
-        document.getElementById('s-int').innerText = ts.int;
+        const mHp = 100 + (data.vit * 10), mSt = 100 + (data.str * 5);
+        document.getElementById('r-lvl').innerText = data.level;
         document.getElementById('r-gold').innerText = Math.floor(data.gold);
-        document.getElementById('r-exp').innerText = data.exp;
-
         setBar('hp', data.current_hp, mHp);
         setBar('st', data.stamina, mSt);
-        setBar('mp', data.current_mp, mMp);
     }
 
     function setBar(id, cur, max) {
@@ -153,70 +129,138 @@
 
         if(t === 'world') {
             c.innerHTML = `<h4>Локация: ${data.location}</h4>
-                <button class="btn-act" onclick="travel('Лес')">🌲 В Лес</button>
-                <button class="btn-act" onclick="travel('Шахта')">⛏️ В Шахту</button>`;
+                <p>Выберите место для перехода:</p>
+                <button class="btn" onclick="travel('Лес')">🌲 В Темный Лес</button>
+                <button class="btn" onclick="travel('Шахта')">⛏️ В Глубокую Шахту</button>
+                <button class="btn" style="background:#444; color:#fff" onclick="travel('Лагерь')">🛖 В Лагерь (Безопасно)</button>`;
         } else if(t === 'fight') {
-            c.innerHTML = `<h4>Арена</h4>
-                <p style="font-size:10px">Ловкость ${data.agi} дает шанс уворота.</p>
-                <button class="btn-act" style="background:#800; color:#fff; height:50px;" onclick="doFight()">УДАРИТЬ</button>`;
+            if(data.location === 'Лагерь') {
+                c.innerHTML = `<p style="text-align:center; padding-top:40px;">В Лагере нет монстров. Идите в Лес или Шахту!</p>`;
+            } else {
+                renderFight();
+            }
         } else if(t === 'inv') {
-            c.innerHTML = `<h4>Ваш Герой</h4>
-                <div style="font-size:11px; margin-bottom:10px;">Оружие: ${data.equip.weapon ? data.equip.weapon.name : 'Кулаки'}<br>Броня: ${data.equip.armor ? data.equip.armor.name : 'Нет'}</div>
-                <h4>Инвентарь</h4>
-                ${data.inventory.length === 0 ? 'Пусто' : data.inventory.map((it, i) => `<div class="card">${it.name} <button onclick="equip(${i})">Надеть</button></div>`).join('')}`;
+            renderHero();
         } else if(t === 'shop') {
             c.innerHTML = `<h4>Торговец</h4>
-                <div class="card">⚔️ Меч (+5 Сила) | 200💰 <button onclick="buy('Sword', 200)">Купить</button></div>
-                <div class="card">🛡️ Латник (+10 Жив) | 500💰 <button onclick="buy('Armor', 500)">Купить</button></div>`;
+                <div class="box" style="margin:0; border-color:#444">
+                    Зелье жизни (Full HP) | 50💰 <button onclick="buyPot()">Купить</button>
+                </div>`;
         }
     }
 
-    function doFight() {
-        if(data.stamina < 10) return addLog("Нет выносливости!");
-        data.stamina -= 10;
-        if(Math.random() * 100 < (data.agi * 2)) {
-            addLog("⚡ Вы увернулись от удара!");
-        } else {
-            data.current_hp -= 10;
-            addLog("💥 Получен урон -10 HP");
+    function renderFight() {
+        const c = document.getElementById('tab-content');
+        if(!enemy) {
+            c.innerHTML = `<h4>Засада!</h4><button class="btn" onclick="spawnEnemy()">ИСКАТЬ МОНСТРА</button>`;
+            return;
         }
-        data.exp += 20;
-        addLog("✅ Удар! +20 EXP");
+        c.innerHTML = `
+            <div class="mob-box">
+                <div style="font-weight:bold; color:var(--hp)">${enemy.n}</div>
+                <div class="bar-bg"><div id="en-hp" class="bar-fill" style="background:var(--hp); width:${(enemy.hp/enemy.maxHp*100)}%"></div></div>
+                <div style="font-size:10px">${enemy.hp} / ${enemy.maxHp} HP</div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                <button class="btn" style="height:60px" onclick="attack()">УДАРИТЬ</button>
+                <button class="btn" style="height:60px; background:#555; color:#fff" onclick="enemy=null;setTab('fight')">СБЕЖАТЬ</button>
+            </div>`;
+    }
+
+    function spawnEnemy() {
+        const possible = MOBS[data.location];
+        const raw = possible[Math.floor(Math.random() * possible.length)];
+        enemy = JSON.parse(JSON.stringify(raw));
+        renderFight();
+    }
+
+    function attack() {
+        if(data.stamina < 10) return addLog("Устал, нужно отдохнуть!");
+        data.stamina -= 10;
+        
+        // Твой урон
+        let dmg = 5 + data.str;
+        enemy.hp -= dmg;
+        addLog(`Вы ударили ${enemy.n} на ${dmg}`);
+
+        if(enemy.hp <= 0) {
+            addLog(`✅ Победа! +${enemy.exp} опыта, +${enemy.gold} золота`);
+            data.exp += enemy.exp;
+            data.gold += enemy.gold;
+            enemy = null;
+            checkLevel();
+            setTab('fight');
+        } else {
+            // Урон монстра
+            let eDmg = Math.max(1, enemy.dmg - Math.floor(data.vit/2));
+            data.current_hp -= eDmg;
+            addLog(`💥 ${enemy.n} укусил вас на ${eDmg}`);
+            if(data.current_hp <= 0) {
+                data.current_hp = 10;
+                data.location = 'Лагерь';
+                enemy = null;
+                alert("Вы потеряли сознание и очнулись в Лагере...");
+                setTab('world');
+            }
+        }
+        updateUI();
+        if(enemy) renderFight();
+    }
+
+    function renderHero() {
+        const c = document.getElementById('tab-content');
+        let tableHTML = `<table><tr><th>Ур.</th><th>Опыт</th></tr>`;
+        EXP_TABLE.forEach((exp, i) => {
+            if(i > 0) tableHTML += `<tr ${data.level==i?'style="color:var(--gold); font-weight:bold"':''}><td>${i}</td><td>${exp}</td></tr>`;
+        });
+        tableHTML += `</table>`;
+
+        c.innerHTML = `<h4>Ваш Герой</h4>
+            <div style="font-size:12px">
+                Сила: ${data.str} | Живучесть: ${data.vit}<br>
+                Инвентарь: ${data.inventory.length} предметов
+            </div>
+            ${tableHTML}`;
+    }
+
+    function checkLevel() {
+        if(data.exp >= EXP_TABLE[data.level + 1]) {
+            data.level++;
+            data.str += 2; data.vit += 2;
+            addLog("✨ НОВЫЙ УРОВЕНЬ! Вы стали сильнее.");
+        }
+    }
+
+    function travel(loc) {
+        data.location = loc;
+        enemy = null;
+        addLog("Переход в " + loc);
+        setTab('world');
         updateUI();
     }
 
-    function travel(loc) { data.location = loc; addLog("Вы перешли в " + loc); updateUI(); setTab('world'); }
+    function buyPot() {
+        if(data.gold >= 50) {
+            data.gold -= 50;
+            data.current_hp = 100 + (data.vit * 10);
+            addLog("Вы выпили зелье. HP восстановлено!");
+            updateUI();
+        }
+    }
 
     function tick() {
         const mHp = 100 + (data.vit * 10), mSt = 100 + (data.str * 5);
-        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, data.current_hp + 1);
-        if(data.stamina < mSt) data.stamina = Math.min(mSt, data.stamina + 2);
+        if(data.current_hp < mHp) data.current_hp = Math.min(mHp, data.current_hp + 2);
+        if(data.stamina < mSt) data.stamina = Math.min(mSt, data.stamina + 3);
         updateUI();
     }
-
-    async function save() { if(user) await sb.from('users').update(data).eq('username', user); }
 
     function addLog(m) {
         const l = document.getElementById('log');
         l.innerHTML = `<div>[${new Date().toLocaleTimeString()}] ${m}</div>` + l.innerHTML;
+        l.scrollTop = 0;
     }
 
-    async function initChat() {
-        sb.channel('global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
-            const m = document.getElementById('chat-msgs');
-            m.innerHTML += `<div><b>${p.new.user}:</b> ${p.new.text}</div>`;
-            m.scrollTop = m.scrollHeight;
-        }).subscribe();
-    }
-
-    async function sendChat() {
-        const i = document.getElementById('chat-in');
-        if(!i.value) return;
-        await sb.from('messages').insert({ user: user, text: i.value });
-        i.value = '';
-    }
-
-    // Авто-логин
     const s = localStorage.getItem('tschorni_session');
     if(s) { const p = JSON.parse(s); document.getElementById('u_nick').value = p.n; document.getElementById('u_pass').value = p.p; auth('login'); }
 </script>
