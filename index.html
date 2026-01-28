@@ -3,79 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Carnage: Mobile Store</title>
+    <title>Carnage: Mobile Legacy</title>
     <style>
-        :root { --gold: #f1c40f; --bg: #151515; --panel: #252525; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --border: #3d3d3d; }
+        :root { --gold: #f1c40f; --bg: #111; --panel: #222; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --border: #444; }
         body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; user-select: none; }
-        
         .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 10; }
         .bar-bg { height: 14px; background: #333; border-radius: 7px; border: 1px solid #555; overflow: hidden; margin: 4px 0; position: relative; }
         .fill { height: 100%; transition: 0.4s; width: 100%; }
         .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 14px; font-weight: bold; color: #fff; z-index: 2; }
-        
         .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
         .screen { display: none; } .active { display: block; }
-        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         button { padding: 12px; background: #3c3c3c; color: #eee; border: 1px solid #555; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); z-index: 20; }
         .nav-item { flex: 1; padding: 15px 5px; text-align: center; font-size: 10px; color: #888; }
         .nav-item.active { color: var(--gold); background: #1a1a1a; }
-
-        /* Магазин и Инвентарь */
+        #log { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; color: #aaa; margin-bottom: 10px; border: 1px solid var(--border); }
         .item-card { background: #1a1a1a; border: 1px solid #444; padding: 10px; border-radius: 5px; text-align: center; margin-bottom: 8px; }
-        .item-name { color: var(--gold); font-weight: bold; font-size: 12px; display: block; }
-        .item-stat { color: var(--green); font-size: 10px; }
-        .equip-slot { background: #111; border: 1px dashed #555; padding: 10px; font-size: 20px; text-align: center; border-radius: 4px; }
+        .slot { background: #111; border: 1px dashed #555; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 6px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold);">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:5px;">
             <b id="ui-nick">Загрузка...</b>
             <b>💰 <span id="gold">0</span></b>
         </div>
         <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
+        <div class="bar-bg"><div class="bar-txt">🌟 EXP: <span id="exp-val">0/0</span></div><div id="exp-fill" class="fill" style="background:var(--blue)"></div></div>
     </div>
 
     <div class="content" style="padding:10px;">
-        
+        <div id="log"></div>
+
         <div id="scr-town" class="screen">
             <h3 style="text-align:center; color:var(--gold)">🏙️ Площадь Города</h3>
             <div class="grid">
-                <button onclick="openBuild('shop')">🛍️ МАГАЗИН</button>
-                <button onclick="openBuild('hospital')">🏥 Больница</button>
-                <button onclick="openBuild('bank')">🏛️ Банк</button>
+                <button onclick="openBuild('shop')">🛒 МАГАЗИН</button>
+                <button onclick="openBuild('hospital')">🏥 БОЛЬНИЦА</button>
                 <button onclick="move('forest_1')">🌲 В ЛЕС</button>
+                <button onclick="openBuild('bank')">🏛️ БАНК</button>
             </div>
         </div>
 
         <div id="scr-shop" class="screen">
-            <div style="display:flex; justify-content:space-between;">
-                <h3 style="color:var(--gold)">🛒 Лавка Купца</h3>
-                <button onclick="move('town')" style="padding:5px 10px;">❌ Выйти</button>
-            </div>
-            <div id="shop-items"></div>
+            <h3 style="color:var(--gold); text-align:center;">🛒 Лавка Купца</h3>
+            <div id="shop-list"></div>
+            <button style="width:100%; margin-top:10px;" onclick="move('town')">❌ Выйти</button>
         </div>
 
         <div id="scr-char" class="screen">
             <div class="panel">
-                <h4 style="margin:0; color:var(--gold)">👤 Профиль и Снаряжение</h4>
-                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:15px;">
-                    <div class="equip-slot" id="slot-neck">📿</div>
-                    <div class="equip-slot" id="slot-head">🪖</div>
-                    <div class="equip-slot" id="slot-weapon">⚔️</div>
+                <h4 style="margin:0 0 10px 0; color:var(--gold);">👤 Снаряжение</h4>
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                    <div class="slot" id="slot-neck" title="Шея">➖</div>
+                    <div class="slot" id="slot-head" title="Голова">➖</div>
+                    <div class="slot" id="slot-weapon" title="Оружие">➖</div>
                 </div>
-                <div style="margin-top:20px;" id="stat-list"></div>
+            </div>
+            <div class="panel">
+                <h4 style="margin:0 0 10px 0; color:var(--blue);">🎒 Рюкзак (Инвентарь)</h4>
+                <div id="inventory-list" class="grid"></div>
             </div>
         </div>
 
+        <div id="scr-hospital" class="screen panel">
+            <h3 style="color:var(--red); text-align:center;">🏥 Больница</h3>
+            <p style="text-align:center;">Доктор восстановит силы за 10 золотых.</p>
+            <button style="width:100%" onclick="healPlayer()">Лечиться (10💰)</button>
+            <button style="width:100%; margin-top:10px;" onclick="move('town')">Назад</button>
+        </div>
     </div>
 
     <div class="nav-bar">
         <div class="nav-item active" id="nav-town" onclick="move('town')">🏙️<br>Город</div>
+        <div class="nav-item" id="nav-wild" onclick="move('forest_1')">🌲<br>Лес</div>
         <div class="nav-item" id="nav-char" onclick="openChar()">👤<br>Герой</div>
     </div>
 
@@ -83,113 +86,135 @@
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
 
+        // Инициализация данных (загрузка из памяти или дефолт)
         let p = JSON.parse(localStorage.getItem('last_user_save')) || { 
-            username: "Игрок", hp: 100, gold: 150, exp: 0, lvl: 1, points: 5,
-            str: 5, agi: 5, int: 5, vit: 5, loc: 'town',
-            equip: { weapon: null, head: null, neck: null }
+            username: "Герой", hp: 100, gold: 100, exp: 0, lvl: 1, 
+            str: 5, agi: 5, vit: 5, int: 5, 
+            loc: 'town',
+            equip: { weapon: null, head: null, neck: null },
+            inventory: [] 
         };
 
-        const items = [
-            { id: 'sw1', name: 'Деревянный меч', type: 'weapon', cost: 50, stat: 'str', val: 3, icon: '🗡️' },
-            { id: 'sw2', name: 'Стальной клинок', type: 'weapon', cost: 200, stat: 'str', val: 10, icon: '⚔️' },
-            { id: 'hm1', name: 'Кожаный шлем', type: 'head', cost: 40, stat: 'vit', val: 2, icon: '🪖' },
-            { id: 'nk1', name: 'Амулет Удачи', type: 'neck', cost: 100, stat: 'agi', val: 5, icon: '📿' }
-        ];
+        const gTime = () => new Intl.DateTimeFormat('ru-RU', {timeZone:'Europe/Berlin', hour:'2-digit', minute:'2-digit', second:'2-digit'}).format(new Date());
+
+        const itemsDB = {
+            'sw1': { id: 'sw1', name: 'Деревянный нож', type: 'weapon', cost: 30, stat: 'str', val: 2, icon: '🔪' },
+            'sw2': { id: 'sw2', name: 'Меч Ополченца', type: 'weapon', cost: 150, stat: 'str', val: 8, icon: '⚔️' },
+            'hm1': { id: 'hm1', name: 'Кожаная шапка', type: 'head', cost: 40, stat: 'vit', val: 3, icon: '🪖' },
+            'nk1': { id: 'nk1', name: 'Зуб волка', type: 'neck', cost: 80, stat: 'agi', val: 4, icon: '📿' }
+        };
+
+        // --- ФУНКЦИЯ СОХРАНЕНИЯ (ТУДА, КУДА ТЫ СПРАШИВАЛ) ---
+        async function save() {
+            localStorage.setItem('last_user_save', JSON.stringify(p));
+            try {
+                await fetch(`${SB_URL}/rest/v1/users?username=eq.${p.username}`, {
+                    method: 'PATCH',
+                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ save_data: p, last_seen: new Date().toISOString() })
+                });
+                console.log("Сохранено в Supabase");
+            } catch(e) { console.error("Ошибка сохранения", e); }
+        }
+
+        function addLog(m) {
+            const l = document.getElementById('log');
+            l.innerHTML += `<div><span style="color:#555">[${gTime()}]</span> ${m}</div>`;
+            l.scrollTop = l.scrollHeight;
+        }
 
         function move(loc) {
+            p.loc = loc;
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            if(loc === 'town') {
-                document.getElementById('scr-town').classList.add('active');
-                document.getElementById('nav-town').classList.add('active');
-            }
-            p.loc = loc;
-            updateUI();
+            document.getElementById('scr-' + (loc === 'forest_1' ? 'town' : loc)).classList.add('active');
+            document.getElementById('nav-' + (loc === 'town' ? 'town' : 'wild')).classList.add('active');
+            if(loc === 'forest_1') addLog("Вы вошли в Лес.");
+            updateUI(); save();
         }
 
         function openBuild(type) {
-            if(type === 'shop') {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById('scr-shop').classList.add('active');
-                renderShop();
-            }
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('scr-' + type).classList.add('active');
+            if(type === 'shop') renderShop();
         }
 
         function renderShop() {
-            const container = document.getElementById('shop-items');
-            container.innerHTML = '';
-            items.forEach(it => {
-                const owned = p.equip[it.type] === it.id;
-                container.innerHTML += `
+            const list = document.getElementById('shop-list');
+            list.innerHTML = '';
+            Object.values(itemsDB).forEach(it => {
+                list.innerHTML += `
                 <div class="item-card">
-                    <span class="item-name">${it.icon} ${it.name}</span>
-                    <span class="item-stat">+${it.val} ${it.stat.toUpperCase()}</span>
-                    <button style="width:100%; margin-top:5px; padding:5px;" 
-                        onclick="buyItem('${it.id}')" ${owned ? 'disabled' : ''}>
-                        ${owned ? 'Экипировано' : `Купить за ${it.cost}💰`}
-                    </button>
+                    <b>${it.icon} ${it.name}</b><br>
+                    <small>+${it.val} к ${it.stat}</small><br>
+                    <button onclick="buy('${it.id}')" style="margin-top:5px;">Купить ${it.cost}💰</button>
                 </div>`;
             });
         }
 
-        function buyItem(id) {
-            const it = items.find(i => i.id === id);
+        function buy(id) {
+            const it = itemsDB[id];
             if(p.gold >= it.cost) {
                 p.gold -= it.cost;
-                p.equip[it.type] = it.id;
-                alert(`Вы купили ${it.name}!`);
-                updateUI();
-                renderShop();
-                save();
-            } else {
-                alert("Недостаточно золота!");
-            }
+                p.inventory.push(id);
+                addLog(`Куплено: ${it.name}`);
+                save(); updateUI();
+            } else { alert("Нет денег!"); }
         }
 
         function openChar() {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('scr-char').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('nav-char').classList.add('active');
+            
+            const inv = document.getElementById('inventory-list');
+            inv.innerHTML = '';
+            p.inventory.forEach((id, idx) => {
+                const it = itemsDB[id];
+                inv.innerHTML += `
+                <div class="item-card" onclick="equip('${id}', ${idx})">
+                    ${it.icon}<br><small>Надеть</small>
+                </div>`;
+            });
             updateUI();
         }
 
+        function equip(id, idx) {
+            const it = itemsDB[id];
+            p.equip[it.type] = id;
+            addLog(`Вы надели ${it.name}`);
+            save(); openChar();
+        }
+
+        function healPlayer() {
+            if(p.gold >= 10) {
+                p.gold -= 10;
+                p.hp = 100 + (p.vit * 20);
+                addLog("Вы полностью исцелены!");
+                updateUI(); save();
+            }
+        }
+
         function updateUI() {
-            // Считаем бонусы от вещей
-            let bStr = 0, bAgi = 0, bVit = 0, bInt = 0;
+            let bonusVit = 0;
             Object.values(p.equip).forEach(id => {
-                const it = items.find(i => i.id === id);
-                if(it) {
-                    if(it.stat === 'str') bStr += it.val;
-                    if(it.stat === 'agi') bAgi += it.val;
-                    if(it.stat === 'vit') bVit += it.val;
-                    if(it.stat === 'int') bInt += it.val;
-                    document.getElementById(`slot-${it.type}`).innerText = it.icon;
+                if(id && itemsDB[id]) {
+                    document.getElementById(`slot-${itemsDB[id].type}`).innerText = itemsDB[id].icon;
+                    if(itemsDB[id].stat === 'vit') bonusVit += itemsDB[id].val;
                 }
             });
 
-            let totalMaxHp = 100 + ((p.vit + bVit) * 20);
+            let maxHp = 100 + ((p.vit + bonusVit) * 20);
             document.getElementById('ui-nick').innerText = p.username;
             document.getElementById('gold').innerText = p.gold;
-            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${totalMaxHp}`;
-            document.getElementById('hp-fill').style.width = (p.hp / totalMaxHp * 100) + "%";
-
-            const sl = document.getElementById('stat-list');
-            sl.innerHTML = `
-                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Сила:</span> <b>${p.str} <small style="color:var(--green)">+${bStr}</small></b></div>
-                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Живучесть:</span> <b>${p.vit} <small style="color:var(--green)">+${bVit}</small></b></div>
-                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Ловкость:</span> <b>${p.agi} <small style="color:var(--green)">+${bAgi}</small></b></div>
-            `;
+            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
+            document.getElementById('hp-fill').style.width = (p.hp / maxHp * 100) + "%";
         }
 
-        async function save() {
-            localStorage.setItem('last_user_save', JSON.stringify(p));
-            await fetch(`${SB_URL}/rest/v1/users?username=eq.${p.username}`, {
-                method: 'PATCH',
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ save_data: p })
-            });
-        }
-
+        // Авто-сохранение раз в минуту
+        setInterval(save, 60000);
+        
         move('town');
     </script>
 </body>
