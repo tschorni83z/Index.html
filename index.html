@@ -6,86 +6,117 @@
     <title>TSCHORNI MOBILE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
-        .box { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; }
-        #status { color: #ffcc00; margin-top: 15px; font-size: 14px; }
-        .error-log { color: #ff4d4d; font-weight: bold; font-size: 18px; display: none; margin-bottom: 20px; }
+        :root { --gold: #ffcc00; --bg: #0a0a0a; --panel: #1a1a1a; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 20px; text-align: center; margin: 0; }
+        .box { background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid #333; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: var(--gold); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 5px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--gold); }
+        .btn { width: 100%; padding: 15px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .btn:active { transform: scale(0.98); }
+        .btn-reg { background: none; color: var(--gold); border: 1px solid var(--gold); margin-top: 15px; }
+        #status { color: #888; margin-top: 20px; font-size: 14px; min-height: 20px; }
+        #game-ui { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="lib-error" class="error-log">❌ ОШИБКА: ИГРА НЕ ЗАГРУЖЕНА!</div>
-
-    <div id="main-ui">
-        <h2>TSCHORNI</h2>
+    <div id="auth-screen">
+        <h2>Tschorni</h2>
+        <p style="font-size: 12px; opacity: 0.6; margin-top: 0;">Online RPG Mobile</p>
         
         <div class="box">
-            <input type="text" id="nick" placeholder="Никнейм">
-            <input type="password" id="pass" placeholder="Пароль">
-            <button class="btn" onclick="doAction('login')">ВОЙТИ</button>
-            <button class="btn" style="background:none; color:#ffcc00; margin-top:10px;" onclick="doAction('reg')">СОЗДАТЬ АККАУНТ</button>
+            <input type="text" id="nick" placeholder="Никнейм (без пробелов)">
+            <input type="password" id="pass" placeholder="Пароль (мин. 6 знаков)">
+            
+            <button class="btn" onclick="doAction('login')">Войти в игру</button>
+            <button class="btn btn-reg" onclick="doAction('reg')">Создать героя</button>
         </div>
 
-        <div id="status">Статус: Готов</div>
+        <div id="status">Статус: Готов к запуску</div>
+    </div>
+
+    <div id="game-ui">
+        <h2 style="margin-top: 50px;">Вы в игре!</h2>
+        <div class="box">
+            <p id="player-label" style="font-size: 20px;"></p>
+            <p>Добро пожаловать в мир Tschorni. База данных подключена.</p>
+            <button class="btn" style="background:#444; color:#fff;" onclick="location.reload()">Выйти</button>
+        </div>
     </div>
 
     <script>
-        // 1. Проверка библиотеки (специально для телефонов)
-        setTimeout(() => {
-            if (typeof window.supabase === 'undefined') {
-                document.getElementById('lib-error').style.display = 'block';
-                document.getElementById('status').innerText = "Библиотека Supabase не найдена. Попробуй обновить страницу.";
-            }
-        }, 2000);
-
+        // Данные твоего проекта
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
         
+        // Создаем клиент Supabase
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
         async function doAction(type) {
             const status = document.getElementById('status');
-            const nick = document.getElementById('nick').value.trim();
-            const pass = document.getElementById('pass').value.trim();
+            const nickInput = document.getElementById('nick').value.trim();
+            const passInput = document.getElementById('pass').value.trim();
 
-            if (!nick || !pass) {
-                alert("Заполни поля!");
+            if (!nickInput || !passInput) {
+                alert("Введите ник и пароль!");
                 return;
             }
 
-            status.innerText = "⏳ Соединение...";
+            status.innerText = "⏳ Магия в процессе...";
+            status.style.color = "#ffcc00";
+
+            // Генерируем нормальный Email, который Supabase примет
+            const fakeEmail = nickInput.toLowerCase() + "@game-tschorni.com";
 
             try {
-                const supabase = window.supabase.createClient(SB_URL, SB_KEY);
-                const fakeEmail = nick.toLowerCase() + "@game.local";
-
                 if (type === 'reg') {
-                    const { data, error } = await supabase.auth.signUp({ email: fakeEmail, password: pass });
+                    // 1. РЕГИСТРАЦИЯ В AUTH
+                    const { data, error } = await supabase.auth.signUp({ 
+                        email: fakeEmail, 
+                        password: passInput 
+                    });
                     if (error) throw error;
 
+                    // 2. СОХРАНЕНИЕ НИКА В ТАБЛИЦУ USERS
                     if (data.user) {
                         const { error: dbErr } = await supabase.from('users').insert({
                             id: data.user.id,
-                            username: nick,
+                            username: nickInput,
                             email_hidden: fakeEmail
                         });
                         if (dbErr) throw dbErr;
                     }
-                    alert("Успех! Теперь нажми ВОЙТИ");
-                    status.innerText = "Аккаунт создан.";
+                    
+                    alert("Герой " + nickInput + " создан! Теперь нажми кнопку ВОЙТИ.");
+                    status.innerText = "Аккаунт готов. Входите!";
+                    status.style.color = "#00ff88";
+
                 } else {
-                    const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                    if (!u || uErr) throw new Error("Ник не найден");
+                    // 3. ВХОД (сначала ищем почту по нику)
+                    const { data: userRow, error: uErr } = await supabase.from('users')
+                        .select('email_hidden')
+                        .eq('username', nickInput)
+                        .single();
 
-                    const { error: lErr } = await supabase.auth.signInWithPassword({ email: u.email_hidden, password: pass });
-                    if (lErr) throw lErr;
+                    if (!userRow || uErr) throw new Error("Герой не найден! Сначала создайте его.");
 
-                    alert("ТЫ В ИГРЕ!");
-                    status.innerText = "Вход выполнен!";
+                    const { error: loginErr } = await supabase.auth.signInWithPassword({ 
+                        email: userRow.email_hidden, 
+                        password: passInput 
+                    });
+                    if (loginErr) throw loginErr;
+
+                    // ПОБЕДА!
+                    document.getElementById('auth-screen').style.display = 'none';
+                    document.getElementById('game-ui').style.display = 'block';
+                    document.getElementById('player-label').innerText = "Привет, " + nickInput;
                 }
             } catch (err) {
+                console.error(err);
                 alert("ОШИБКА: " + err.message);
                 status.innerText = "Ошибка: " + err.message;
+                status.style.color = "#ff4d4d";
             }
         }
     </script>
