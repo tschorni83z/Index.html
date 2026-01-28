@@ -6,34 +6,14 @@
     <title>TSCHORNI GAME</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { 
-            --gold: #ffcc00; --bg: #0a0a0a; --panel: #161616; 
-            --border: #2a2a2a; --red: #ff4d4d; --green: #00ff88; 
-        }
-        body { 
-            background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
-            margin: 0; display: flex; justify-content: center; padding: 20px;
-        }
+        :root { --gold: #ffcc00; --bg: #0a0a0a; --panel: #161616; --border: #2a2a2a; --red: #ff4d4d; --green: #00ff88; }
+        body { background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; padding: 20px; }
         .container { width: 100%; max-width: 360px; }
-        .logo { 
-            text-align: center; font-size: 28px; font-weight: 900; 
-            color: var(--gold); letter-spacing: 5px; margin-bottom: 30px; 
-            text-shadow: 0 0 15px rgba(255,204,0,0.3);
-        }
-        .section {
-            background: var(--panel); padding: 25px; border-radius: 15px;
-            border: 1px solid var(--border); margin-bottom: 25px;
-        }
+        .logo { text-align: center; font-size: 28px; font-weight: 900; color: var(--gold); letter-spacing: 5px; margin-bottom: 30px; text-shadow: 0 0 15px rgba(255,204,0,0.3); }
+        .section { background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; }
         h3 { margin-top: 0; color: var(--gold); font-size: 16px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        input {
-            width: 100%; padding: 14px; margin: 10px 0; background: #000; 
-            border: 1px solid var(--border); color: #fff; border-radius: 8px; 
-            box-sizing: border-box; outline: none;
-        }
-        .btn {
-            width: 100%; padding: 15px; font-weight: 800; cursor: pointer;
-            border-radius: 8px; border: none; text-transform: uppercase; transition: 0.2s;
-        }
+        input { width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 8px; box-sizing: border-box; outline: none; }
+        .btn { width: 100%; padding: 15px; font-weight: 800; cursor: pointer; border-radius: 8px; border: none; text-transform: uppercase; transition: 0.2s; }
         .btn-login { background: var(--gold); color: #000; }
         .btn-reg { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
         .msg { font-size: 12px; margin-top: 10px; text-align: center; min-height: 15px; font-weight: bold; }
@@ -46,7 +26,7 @@
         <div class="logo">TSCHORNI</div>
 
         <div class="section">
-            <h3>Вход в аккаунт</h3>
+            <h3>Вход</h3>
             <input type="text" id="l-nick" placeholder="Никнейм">
             <input type="password" id="l-pass" placeholder="Пароль">
             <button class="btn btn-login" onclick="login()">Войти</button>
@@ -56,10 +36,9 @@
         <div style="text-align: center; color: #444; margin-bottom: 25px;">— ИЛИ —</div>
 
         <div class="section">
-            <h3>Новый герой</h3>
+            <h3>Регистрация</h3>
             <input type="text" id="r-nick" placeholder="Придумайте Никнейм">
-            <input type="email" id="r-email" placeholder="Ваша Почта (Email)">
-            <input type="password" id="r-pass" placeholder="Пароль">
+            <input type="password" id="r-pass" placeholder="Придумайте Пароль">
             <button class="btn btn-reg" onclick="register()">Создать аккаунт</button>
             <div id="r-msg" class="msg"></div>
         </div>
@@ -68,67 +47,51 @@
     <div id="game-ui" class="container">
         <div class="section">
             <h1 id="welcome-msg"></h1>
-            <p>Вы успешно вошли в мир!</p>
+            <p>Вы успешно вошли без подтверждения почты!</p>
             <button class="btn btn-reg" onclick="location.reload()">Выйти</button>
         </div>
     </div>
 
     <script>
-        // Инициализация с проверкой
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SB_URL, SB_KEY);
-            console.log("Supabase подключен успешно");
-        } catch (e) {
-            alert("Ошибка подключения библиотеки: " + e.message);
-        }
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
         // РЕГИСТРАЦИЯ
         async function register() {
             const nick = document.getElementById('r-nick').value.trim();
-            const email = document.getElementById('r-email').value.trim();
             const pass = document.getElementById('r-pass').value.trim();
             const msg = document.getElementById('r-msg');
 
-            if(!nick || !email || !pass) {
-                msg.style.color = "var(--red)";
-                msg.innerText = "Ошибка: Заполните все поля!";
-                return;
-            }
+            if(!nick || !pass) return msg.innerText = "Заполните поля!";
+            
+            // Создаем фейковый email для Supabase
+            const fakeEmail = `${nick}@game.local`;
 
             msg.style.color = "white";
-            msg.innerText = "⏳ Создание аккаунта...";
+            msg.innerText = "Создание героя...";
 
             try {
-                // 1. Пытаемся создать пользователя в Auth
+                // 1. Auth
                 const { data, error } = await supabase.auth.signUp({
-                    email: email,
+                    email: fakeEmail,
                     password: pass,
-                    options: { data: { nickname: nick } }
                 });
-
                 if (error) throw error;
 
-                // 2. Если Auth прошел, пишем в таблицу users
-                if (data.user) {
-                    const { error: dbError } = await supabase.from('users').insert({
-                        id: data.user.id,
-                        username: nick,
-                        email_hidden: email,
-                        save_data: { username: nick, hp: 100, gold: 100 }
-                    });
-                    if (dbError) throw dbError;
-                }
+                // 2. DB профиль
+                await supabase.from('users').insert({
+                    id: data.user.id,
+                    username: nick,
+                    email_hidden: fakeEmail,
+                    save_data: { username: nick, hp: 100, gold: 100 }
+                });
 
                 msg.style.color = "var(--green)";
-                msg.innerText = "✅ Успех! Проверьте почту для подтверждения.";
+                msg.innerText = "Аккаунт создан! Теперь войдите сверху.";
             } catch (err) {
-                console.error(err);
                 msg.style.color = "var(--red)";
-                msg.innerText = "Ошибка: " + err.message;
+                msg.innerText = err.message;
             }
         }
 
@@ -138,18 +101,15 @@
             const pass = document.getElementById('l-pass').value.trim();
             const msg = document.getElementById('l-msg');
 
-            if(!nick || !pass) {
-                msg.style.color = "var(--red)";
-                msg.innerText = "Введите ник и пароль!";
-                return;
-            }
-
+            if(!nick || !pass) return msg.innerText = "Введите данные!";
+            
             msg.style.color = "white";
-            msg.innerText = "⏳ Вход...";
+            msg.innerText = "Вход...";
 
             try {
+                // Ищем фейковый email по нику
                 const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                if(!u || uErr) throw new Error("Герой с таким ником не найден");
+                if(!u || uErr) throw new Error("Никнейм не найден");
 
                 const { data: log, error: logErr } = await supabase.auth.signInWithPassword({
                     email: u.email_hidden,
@@ -169,15 +129,6 @@
             document.getElementById('game-ui').style.display = 'block';
             document.getElementById('welcome-msg').innerText = "ПРИВЕТ, " + name.toUpperCase();
         }
-
-        // Проверка сессии при загрузке
-        window.onload = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                const { data } = await supabase.from('users').select('username').eq('id', session.user.id).single();
-                if(data) showGame(data.username);
-            }
-        };
     </script>
 </body>
 </html>
