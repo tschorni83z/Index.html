@@ -6,30 +6,29 @@
     <title>TSCHORNI GAME ONLINE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --stamina: #9b59b6; --border: #333; }
+        :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --red: #e74c3c; --green: #2ecc71; --border: #333; }
         body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; }
         
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
-        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; }
-        .auth-form h2 { color: var(--gold); text-align: center; margin-bottom: 20px; }
-        .auth-form input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; }
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; box-shadow: 0 0 20px rgba(241, 196, 15, 0.2); }
+        .auth-form h2 { color: var(--gold); text-align: center; margin: 0 0 20px 0; letter-spacing: 2px; }
+        .auth-form input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; outline: none; }
+        .auth-form input:focus { border-color: var(--gold); }
+        
         .auth-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 8px; border-radius: 5px; cursor: pointer; }
+        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .auth-tabs button.active { background: var(--gold); color: #000; border: none; }
 
-        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
-        .bar-bg { height: 14px; background: #222; border-radius: 7px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
-        .fill { height: 100%; transition: 0.4s; width: 0%; }
-        .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 14px; font-weight: bold; color: #fff; z-index: 2; }
+        .btn-main { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-main:active { transform: scale(0.95); opacity: 0.8; }
         
-        .screen { display: none; padding: 10px; } .active { display: block; }
-        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-        button.primary { width: 100%; padding: 12px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        #auth-msg { font-size: 12px; text-align: center; margin-top: 15px; min-height: 1.2em; line-height: 1.4; }
         
-        #log { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; border: 1px solid var(--border); margin-bottom: 10px; color: #aaa; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 65px; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; cursor: pointer; }
-        .nav-item.active { color: var(--gold); }
+        /* Игровой интерфейс */
+        #game-ui { display: none; }
+        .header { background: #000; padding: 15px; border-bottom: 2px solid var(--border); position: sticky; top: 0; }
+        .screen { display: none; padding: 15px; } .active { display: block; }
+        #log { height: 120px; overflow-y: auto; background: #050505; padding: 10px; font-size: 11px; border: 1px solid var(--border); margin: 10px; color: #00ff00; font-family: 'Courier New', monospace; }
     </style>
 </head>
 <body>
@@ -38,92 +37,100 @@
         <div class="auth-form">
             <h2>TSCHORNI GAME</h2>
             <div class="auth-tabs">
-                <button id="tab-login" class="active" onclick="setAuthMode('login')">Вход</button>
-                <button id="tab-reg" onclick="setAuthMode('reg')">Регистрация</button>
+                <button id="tab-login" class="active" onclick="setAuthMode('login')">ВХОД</button>
+                <button id="tab-reg" onclick="setAuthMode('reg')">РЕГИСТРАЦИЯ</button>
             </div>
             
-            <input type="email" id="auth-email" placeholder="Email">
+            <input type="text" id="auth-nick" placeholder="Никнейм">
+            <input type="email" id="auth-email" placeholder="Email (только для регистрации)" style="display:none;">
             <input type="password" id="auth-pass" placeholder="Пароль">
-            <input type="text" id="auth-nick" placeholder="Ник персонажа (только при регистрации)" style="display:none;">
             
-            <button class="primary" id="auth-btn" onclick="handleAuth()">ВОЙТИ</button>
-            <p id="auth-msg" style="font-size: 11px; color: var(--red); text-align: center; margin-top: 10px;"></p>
+            <button class="btn-main" id="auth-btn" onclick="handleAuth()">ВОЙТИ</button>
+            <div id="auth-msg"></div>
         </div>
     </div>
 
-    <div id="game-ui" style="display:none;">
+    <div id="game-ui">
         <div class="header">
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:5px;">
-                <b id="ui-nick">---</b>
-                <b>💰 <span id="gold">0</span></b>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <b id="ui-nick" style="color:var(--gold); font-size:18px;">---</b>
+                <button onclick="logout()" style="background:none; border:1px solid #444; color:#666; font-size:10px; padding:4px 8px; border-radius:4px;">ВЫХОД</button>
             </div>
-            <div class="bar-bg"><div class="bar-txt">❤️ <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
-            <div class="bar-bg"><div class="bar-txt">💪 <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
         </div>
-
         <div id="log"></div>
-
-        <div id="scr-town" class="screen active">
-            <div class="panel">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <button onclick="move('world')">🧭 Карта мира</button>
-                    <button onclick="move('char')">👤 Персонаж</button>
-                    <button onclick="logout()" style="grid-column: span 2; background: #333; color: #fff; border: 1px solid #444;">ВЫЙТИ ИЗ АККАУНТА</button>
-                </div>
+        <div class="screen active" id="scr-town">
+            <div style="background:var(--panel); padding:20px; border-radius:8px; border:1px solid var(--border); text-align:center;">
+                <p>Вы находитесь в центральном городе.</p>
+                <button class="btn-main" onclick="addLog('Вы осмотрелись вокруг...')">Осмотреться</button>
             </div>
-        </div>
-
-        <div id="scr-world" class="screen">
-            <div class="panel" id="loc-list"></div>
-            <button onclick="move('town')" style="width:100%;">В город</button>
-        </div>
-
-        <div id="scr-char" class="screen">
-            <div class="panel" id="char-stats"></div>
-            <button onclick="move('town')" style="width:100%;">Назад</button>
-        </div>
-
-        <div class="nav-bar">
-            <div class="nav-item active" onclick="move('town')">🏙️<br>Город</div>
-            <div class="nav-item" onclick="move('world')">🧭<br>Мир</div>
-            <div class="nav-item" onclick="move('char')">👤<br>Герой</div>
         </div>
     </div>
 
     <script>
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        const supabase =维持_supabase.createClient(SB_URL, SB_KEY);
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
         let p = null;
         let authMode = 'login';
 
-        // 1. УПРАВЛЕНИЕ АВТОРИЗАЦИЕЙ
         function setAuthMode(mode) {
             authMode = mode;
             document.getElementById('tab-login').className = mode === 'login' ? 'active' : '';
             document.getElementById('tab-reg').className = mode === 'reg' ? 'active' : '';
-            document.getElementById('auth-nick').style.display = mode === 'reg' ? 'block' : 'none';
+            document.getElementById('auth-email').style.display = mode === 'reg' ? 'block' : 'none';
             document.getElementById('auth-btn').innerText = mode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ';
+            document.getElementById('auth-msg').innerText = "";
         }
 
         async function handleAuth() {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
-            const nick = document.getElementById('auth-nick').value;
+            const nick = document.getElementById('auth-nick').value.trim();
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
             const msg = document.getElementById('auth-msg');
-            msg.innerText = "Загрузка...";
+
+            if (!nick || !pass || (authMode === 'reg' && !email)) {
+                msg.style.color = 'var(--red)';
+                return msg.innerText = "Заполните все поля!";
+            }
+
+            msg.style.color = '#fff';
+            msg.innerText = "Обработка...";
 
             if (authMode === 'reg') {
+                // 1. Проверяем, не занят ли ник в нашей таблице пользователей
+                const { data: existingUser } = await supabase.from('users').select('username').eq('username', nick).single();
+                if (existingUser) return msg.style.color = 'var(--red)', msg.innerText = "Этот ник уже занят!";
+
+                // 2. Регистрация через Supabase Auth
                 const { data, error } = await supabase.auth.signUp({ 
                     email, password: pass, options: { data: { nickname: nick } } 
                 });
-                if (error) msg.innerText = "Ошибка: " + error.message;
-                else msg.style.color = 'var(--green)', msg.innerText = "Письмо отправлено! Подтвердите Email и войдите.";
+
+                if (error) return msg.style.color = 'var(--red)', msg.innerText = error.message;
+                
+                msg.style.color = 'var(--green)';
+                msg.innerText = "Успех! Проверьте Email и подтвердите регистрацию.";
             } else {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+                // ВХОД ПО НИКУ
+                // 1. Ищем email, привязанный к этому нику в таблице пользователей
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('email_hidden') // Мы должны создать это поле при первом сохранении
+                    .eq('username', nick)
+                    .single();
+
+                // Если ника нет в БД, пробуем войти по Email (если юзер ввел email в поле ника)
+                let loginEmail = userData ? userData.email_hidden : nick;
+
+                const { data, error } = await supabase.auth.signInWithPassword({ 
+                    email: loginEmail, 
+                    password: pass 
+                });
+
                 if (error) {
-                    msg.innerText = error.message.includes("Email not confirmed") ? "Подтвердите Email в письме!" : "Ошибка входа!";
+                    msg.style.color = 'var(--red)';
+                    msg.innerText = error.message.includes("Email not confirmed") ? "Подтвердите Email!" : "Неверный ник или пароль!";
                 } else {
                     loadPlayerData(data.user);
                 }
@@ -131,16 +138,24 @@
         }
 
         async function loadPlayerData(user) {
-            const { data } = await supabase.from('users').select('save_data').eq('id', user.id).single();
+            const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
             
             if (data) {
                 p = data.save_data;
             } else {
+                // Первый вход после подтверждения Email
                 p = { 
-                    id: user.id, username: user.user_metadata.nickname || 'Герой',
-                    hp:100, st:100, gold:100, exp:0, lvl:1, vit:5, str:5, last_save: Date.now() 
+                    id: user.id, 
+                    username: user.user_metadata.nickname || 'Герой',
+                    hp:100, st:100, gold:100, lvl:1, last_save: Date.now() 
                 };
-                await save();
+                // Важно: сохраняем email_hidden для будущего входа по нику
+                await supabase.from('users').upsert({ 
+                    id: user.id, 
+                    username: p.username, 
+                    email_hidden: user.email, 
+                    save_data: p 
+                });
             }
             startToPlay();
         }
@@ -148,43 +163,13 @@
         function startToPlay() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            updateUI();
-            addLog("Добро пожаловать в мир, " + p.username);
-            setInterval(save, 30000);
-        }
-
-        // 2. ИГРОВАЯ ЛОГИКА
-        function updateUI() {
-            if(!p) return;
-            const maxHp = 100 + p.vit * 20;
             document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = p.gold;
-            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
-            document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
-            document.getElementById('st-val').innerText = `${p.st}/100`;
-            document.getElementById('st-fill').style.width = p.st+'%';
-        }
-
-        function move(scr) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('scr-'+scr).classList.add('active');
-            if(scr === 'char') renderChar();
-            updateUI();
-        }
-
-        function renderChar() {
-            document.getElementById('char-stats').innerHTML = `<h3>${p.username}</h3>Уровень: ${p.lvl}<br>Сила: ${p.str}<br>Живучесть: ${p.vit}`;
-        }
-
-        async function save() {
-            if(!p) return;
-            p.last_save = Date.now();
-            await supabase.from('users').upsert({ id: p.id, username: p.username, save_data: p });
+            addLog(`Персонаж ${p.username} успешно вошел в игру.`);
         }
 
         function addLog(m) {
             const l = document.getElementById('log');
-            l.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${m}</div>`;
+            l.innerHTML += `<div>> ${m}</div>`;
             l.scrollTop = l.scrollHeight;
         }
 
@@ -193,7 +178,6 @@
             location.reload();
         }
 
-        // Авто-проверка сессии при открытии сайта
         window.onload = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) loadPlayerData(session.user);
