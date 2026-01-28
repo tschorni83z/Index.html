@@ -3,24 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TSCHORNI WORLD</title>
+    <title>TSCHORNI RPG</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; padding: 10px; margin: 0; }
         .box { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; max-width: 400px; margin: 10px auto; }
-        input { width: 90%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; font-size: 16px; }
-        .btn-reg { background: none; color: #ffcc00; border: 1px solid #ffcc00; }
+        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .btn:disabled { background: #444; color: #888; }
         
-        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .res-item { background: #000; padding: 10px; border-radius: 8px; border: 1px solid #222; font-size: 14px; }
-        
-        .loc-btn { background: #333; color: #fff; padding: 10px; border-radius: 5px; border: 1px solid #444; margin: 5px; font-size: 12px; }
-        .loc-active { border-color: #ffcc00; color: #ffcc00; background: #221a00; }
+        /* Вкладки */
+        .tabs { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px; }
+        .tab-btn { flex: 1; padding: 10px 5px; background: #222; border: 1px solid #444; color: #888; border-radius: 8px; font-size: 11px; }
+        .tab-active { background: #ffcc00; color: #000; border-color: #ffcc00; font-weight: bold; }
 
-        #p-cont { width: 100%; background: #222; height: 8px; margin-top: 15px; display: none; border-radius: 4px; overflow: hidden; }
-        #p-bar { width: 0%; height: 100%; background: #ffcc00; transition: width linear; }
+        /* Ресурсы и Энергия */
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .res-item { background: #000; padding: 8px; border-radius: 8px; border: 1px solid #222; font-size: 13px; }
+        .en-bar-bg { width: 100%; background: #333; height: 12px; border-radius: 6px; margin-top: 5px; overflow: hidden; }
+        #en-bar-fill { width: 100%; background: #00ccff; height: 100%; transition: 0.3s; }
+
+        /* Локации и Крафт */
+        .loc-btn { background: #333; color: #fff; padding: 8px; border-radius: 5px; border: 1px solid #444; margin: 2px; font-size: 10px; }
+        .loc-active { border-color: #ffcc00; color: #ffcc00; }
+        .craft-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; font-size: 13px; text-align: left; }
+        
+        #p-cont { width: 100%; background: #222; height: 6px; margin-top: 10px; display: none; border-radius: 3px; }
+        #p-bar { width: 0%; height: 100%; background: #ffcc00; }
     </style>
 </head>
 <body>
@@ -28,12 +36,11 @@
 <div id="game-container">
     <h1>TSCHORNI</h1>
     <div class="box">
-        <input type="text" id="u_nick" placeholder="НИКНЕЙМ">
-        <input type="password" id="u_pass" placeholder="ПАРОЛЬ">
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:90%; padding:10px; margin-bottom:10px; background:#000; color:#fff; border:1px solid #444;">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:90%; padding:10px; background:#000; color:#fff; border:1px solid #444;">
         <button class="btn" onclick="auth('login')">ВОЙТИ</button>
-        <button class="btn btn-reg" onclick="auth('reg')">СОЗДАТЬ ГЕРОЯ</button>
+        <button class="btn" style="background:none; color:#ffcc00; border:1px solid #ffcc00;" onclick="auth('reg')">РЕГИСТРАЦИЯ</button>
     </div>
-    <p id="st" style="color: #666;">Система готова</p>
 </div>
 
 <script>
@@ -41,86 +48,147 @@
     const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
     const sb = window.supabase.createClient(S_URL, S_KEY);
 
-    let user, data = {}, isBusy = false, currentLoc = 'forest';
+    let user, data = {}, isBusy = false, currentLoc = 'forest', currentTab = 'mine';
 
     const locations = {
-        forest: { name: '🌲 ЛЕС', res: 'wood', time: 5000 },
-        quarry: { name: '🪨 КАРЬЕР', res: 'stone', time: 8000 },
-        mine: { name: '⛏️ ШАХТА', res: 'iron', time: 12000 }
+        forest: { name: '🌲 ЛЕС', res: 'wood', time: 5000, energy: 10 },
+        quarry: { name: '🪨 КАРЬЕР', res: 'stone', time: 8000, energy: 15 },
+        mine: { name: '⛏️ ШАХТА', res: 'iron', time: 12000, energy: 20 }
     };
 
     async function auth(mode) {
         const nick = document.getElementById('u_nick').value.trim();
         const pass = document.getElementById('u_pass').value.trim();
-        const st = document.getElementById('st');
-        if (!nick || !pass) return alert("Заполни поля!");
-
+        if (!nick || !pass) return alert("Данные!");
         try {
             if (mode === 'reg') {
-                const { error } = await sb.from('users').insert({ id: crypto.randomUUID(), username: nick, email_hidden: pass });
-                if (error) throw error;
-                alert("Герой создан! Теперь входи.");
+                await sb.from('users').insert({ id: crypto.randomUUID(), username: nick, email_hidden: pass });
+                alert("Создан!");
             } else {
-                const { data: u, error } = await sb.from('users').select('*').eq('username', nick).single();
-                if (!u || u.email_hidden !== pass) throw new Error("Ошибка входа");
-                user = nick; data = u; renderGame();
+                const { data: u } = await sb.from('users').select('*').eq('username', nick).single();
+                if (u && u.email_hidden === pass) { user = nick; data = u; renderGame(); startRegen(); }
+                else alert("Ошибка!");
             }
         } catch (e) { alert(e.message); }
     }
 
     function renderGame() {
         document.getElementById('game-container').innerHTML = `
-            <h2>ГЕРОЙ: ${user}</h2>
             <div class="box">
-                <div class="res-grid">
-                    <div class="res-item">💰 Золото: <b id="r-gold">${data.gold}</b></div>
-                    <div class="res-item">🌲 Дерево: <b id="r-wood">${data.wood || 0}</b></div>
-                    <div class="res-item">🪨 Камень: <b id="r-stone">${data.stone || 0}</b></div>
-                    <div class="res-item">⛏️ Железо: <b id="r-iron">${data.iron || 0}</b></div>
+                <div style="font-size:12px; color:#888; margin-bottom:5px;">⚡ Энергия: <span id="en-val">${data.energy}</span>/100</div>
+                <div class="en-bar-bg"><div id="en-bar-fill" style="width:${data.energy}%"></div></div>
+                <div class="res-grid" style="margin-top:10px;">
+                    <div class="res-item">💰 ${data.gold}</div>
+                    <div class="res-item">🌲 ${data.wood || 0}</div>
+                    <div class="res-item">🪨 ${data.stone || 0}</div>
+                    <div class="res-item">⛏️ ${data.iron || 0}</div>
                 </div>
             </div>
 
-            <div class="box">
-                <h3>ЛОКАЦИЯ: <span id="loc-name">${locations[currentLoc].name}</span></h3>
-                <div style="margin-bottom: 10px;">
-                    <button class="loc-btn ${currentLoc==='forest'?'loc-active':''}" onclick="setLoc('forest')">ЛЕС</button>
-                    <button class="loc-btn ${currentLoc==='quarry'?'loc-active':''}" onclick="setLoc('quarry')">КАРЬЕР</button>
-                    <button class="loc-btn ${currentLoc==='mine'?'loc-active':''}" onclick="setLoc('mine')">ШАХТА</button>
-                </div>
-                <button id="m-btn" class="btn" onclick="mine()">ДОБЫВАТЬ</button>
-                <div id="p-cont"><div id="p-bar"></div></div>
+            <div class="tabs">
+                <button class="tab-btn ${currentTab==='mine'?'tab-active':''}" onclick="setTab('mine')">ДОБЫЧА</button>
+                <button class="tab-btn ${currentTab==='market'?'tab-active':''}" onclick="setTab('market')">РЫНОК</button>
+                <button class="tab-btn ${currentTab==='craft'?'tab-active':''}" onclick="setTab('craft')">КРАФТ</button>
             </div>
-            
-            <button class="btn" onclick="location.reload()" style="background:#333; color:#fff; width: 200px;">ВЫЙТИ</button>
+
+            <div id="tab-content">${currentTab==='mine'?renderMine():currentTab==='market'?renderMarket():renderCraft()}</div>
         `;
     }
 
-    function setLoc(l) { if (!isBusy) { currentLoc = l; renderGame(); } }
-
-    async function mine() {
-        if (isBusy) return;
-        isBusy = true;
+    function renderMine() {
         const loc = locations[currentLoc];
+        let time = loc.time;
+        if (currentLoc === 'forest' && data.has_axe) time -= 2000;
+        if (currentLoc !== 'forest' && data.has_pickaxe) time -= 3000;
+
+        return `
+            <div class="box">
+                <h3>${loc.name}</h3>
+                <button class="loc-btn ${currentLoc==='forest'?'loc-active':''}" onclick="setLoc('forest')">ЛЕС</button>
+                <button class="loc-btn ${currentLoc==='quarry'?'loc-active':''}" onclick="setLoc('quarry')">КАРЬЕР</button>
+                <button class="loc-btn ${currentLoc==='mine'?'loc-active':''}" onclick="setLoc('mine')">ШАХТА</button>
+                <button id="m-btn" class="btn" onclick="mine(${time})">ДОБЫВАТЬ (-${loc.energy}⚡)</button>
+                <div id="p-cont"><div id="p-bar"></div></div>
+            </div>
+        `;
+    }
+
+    function renderMarket() {
+        return `
+            <div class="box">
+                <div style="display:flex; justify-content:space-between; margin:10px 0;"><span>🌲 Дерево (2💰)</span><button onclick="sell('wood',2)" style="background:#006633; color:#fff; border:none; padding:5px 10px; border-radius:4px;">Продать</button></div>
+                <div style="display:flex; justify-content:space-between; margin:10px 0;"><span>🪨 Камень (5💰)</span><button onclick="sell('stone',5)" style="background:#006633; color:#fff; border:none; padding:5px 10px; border-radius:4px;">Продать</button></div>
+                <div style="display:flex; justify-content:space-between; margin:10px 0;"><span>⛏️ Железо (12💰)</span><button onclick="sell('iron',12)" style="background:#006633; color:#fff; border:none; padding:5px 10px; border-radius:4px;">Продать</button></div>
+            </div>
+        `;
+    }
+
+    function renderCraft() {
+        return `
+            <div class="box">
+                <div class="craft-item">
+                    <div><b>🪓 ТОПОР</b><br><small>Ускоряет лес. Цена: 20 дерева</small></div>
+                    <button class="btn" style="width:80px;" ${data.has_axe?'disabled':''} onclick="craft('axe')">${data.has_axe?'Есть':'Собрать'}</button>
+                </div>
+                <div class="craft-item" style="margin-top:10px;">
+                    <div><b>⛏️ КИРКА</b><br><small>Ускоряет шахту. Цена: 30 камня</small></div>
+                    <button class="btn" style="width:80px;" ${data.has_pickaxe?'disabled':''} onclick="craft('pick')">${data.has_pickaxe?'Есть':'Собрать'}</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function setTab(t) { if(!isBusy){ currentTab=t; renderGame(); } }
+    function setLoc(l) { if(!isBusy){ currentLoc=l; renderGame(); } }
+
+    async function mine(time) {
+        const loc = locations[currentLoc];
+        if (data.energy < loc.energy) return alert("Нет энергии! Нужно отдохнуть.");
+        isBusy = true;
         const btn = document.getElementById('m-btn');
         const bar = document.getElementById('p-bar');
         const cont = document.getElementById('p-cont');
 
-        btn.disabled = true; btn.innerText = "В ПРОЦЕССЕ...";
-        cont.style.display = 'block'; bar.style.width = '0%';
-        
-        setTimeout(() => { bar.style.transition = `width ${loc.time}ms linear`; bar.style.width = '100%'; }, 50);
+        btn.disabled = true; cont.style.display = 'block';
+        setTimeout(() => { bar.style.transition = `width ${time}ms linear`; bar.style.width = '100%'; }, 50);
 
         setTimeout(async () => {
-            const count = Math.floor(Math.random() * 3) + 1;
-            data[loc.res] = (data[loc.res] || 0) + count;
-            document.getElementById(`r-${loc.res}`).innerText = data[loc.res];
-            
-            const updateData = {}; updateData[loc.res] = data[loc.res];
-            await sb.from('users').update(updateData).eq('username', user);
+            data.energy -= loc.energy;
+            data[loc.res] = (data[loc.res] || 0) + 1;
+            await sb.from('users').update({ [loc.res]: data[loc.res], energy: data.energy }).eq('username', user);
+            isBusy = false; renderGame();
+        }, time);
+    }
 
-            isBusy = false; btn.disabled = false; btn.innerText = "ДОБЫВАТЬ";
-            cont.style.display = 'none'; bar.style.width = '0%'; bar.style.transition = 'none';
-        }, loc.time);
+    async function sell(res, pr) {
+        if (!data[res]) return;
+        data.gold += data[res] * pr;
+        data[res] = 0;
+        await sb.from('users').update({ gold: data.gold, [res]: 0 }).eq('username', user);
+        renderGame();
+    }
+
+    async function craft(type) {
+        if (type === 'axe' && data.wood >= 20) {
+            data.wood -= 20; data.has_axe = true;
+            await sb.from('users').update({ wood: data.wood, has_axe: true }).eq('username', user);
+        } else if (type === 'pick' && data.stone >= 30) {
+            data.stone -= 30; data.has_pickaxe = true;
+            await sb.from('users').update({ stone: data.stone, has_pickaxe: true }).eq('username', user);
+        } else { return alert("Недостаточно ресурсов!"); }
+        renderGame();
+    }
+
+    function startRegen() {
+        setInterval(async () => {
+            if (data.energy < 100) {
+                data.energy += 1;
+                document.getElementById('en-val').innerText = data.energy;
+                document.getElementById('en-bar-fill').style.width = data.energy + '%';
+                // Сохраняем энергию раз в минуту, чтобы не спамить базу
+                if (data.energy % 5 === 0) await sb.from('users').update({ energy: data.energy }).eq('username', user);
+            }
+        }, 30000); // 1 единица каждые 30 сек
     }
 </script>
 </body>
