@@ -3,35 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TSCHORNI RPG: EXPLORE</title>
+    <title>МИР ТЬМЫ: RPG</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 5px; }
         .box { background: #151515; padding: 15px; border-radius: 12px; border: 1px solid #333; max-width: 420px; margin: 8px auto; }
         .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .btn:disabled { background: #222; color: #555; }
-        .tabs { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; }
-        .tab-btn { flex: 1; padding: 8px; background: #222; color: #888; border: 1px solid #444; border-radius: 8px; font-size: 11px; min-width: 80px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding: 5px 0; }
+        .tab-btn { flex: 1; padding: 10px; background: #222; color: #888; border: 1px solid #444; border-radius: 8px; font-size: 11px; min-width: 80px; }
         .tab-active { background: #ffcc00; color: #000; font-weight: bold; }
-        
-        /* Лог событий */
-        #log { background: #000; border: 1px solid #222; padding: 10px; height: 100px; overflow-y: auto; font-size: 12px; text-align: left; color: #aaa; margin-top: 10px; border-radius: 8px; }
-        .log-win { color: #00ff88; }
-        .log-lose { color: #ff4444; }
-        .log-find { color: #00ccff; }
-
-        .hp-bar { width: 100%; height: 6px; background: #300; border-radius: 3px; margin: 5px 0; overflow: hidden; }
-        .hp-fill { height: 100%; background: #ff4444; transition: 0.3s; }
+        .hp-bar { width: 100%; height: 8px; background: #300; border-radius: 4px; margin: 5px 0; overflow: hidden; }
+        .hp-fill { height: 100%; background: #ff4444; transition: 0.4s; }
+        #log { background: #000; border: 1px solid #222; padding: 10px; height: 100px; overflow-y: auto; font-size: 12px; text-align: left; color: #aaa; border-radius: 8px; }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; }
+        .plus-btn { background: #ffcc00; color: #000; border: none; width: 30px; height: 30px; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <h1>TSCHORNI</h1>
+    <h1>МИР ТЬМЫ</h1>
     <div class="box">
-        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:80%; padding:10px; margin-bottom:5px; background:#000; border:1px solid #333; color:#fff;">
-        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:80%; padding:10px; background:#000; border:1px solid #333; color:#fff;">
+        <input type="text" id="u_nick" placeholder="НИКНЕЙМ" style="width:80%; padding:10px; margin-bottom:5px; background:#000; color:#fff; border:1px solid #333;">
+        <input type="password" id="u_pass" placeholder="ПАРОЛЬ" style="width:80%; padding:10px; background:#000; color:#fff; border:1px solid #333;">
         <button class="btn" onclick="auth('login')">ИГРАТЬ</button>
+        <button class="btn" style="background:none; color:#ffcc00; border:1px solid #ffcc00; margin-top:10px;" onclick="auth('reg')">СОЗДАТЬ ГЕРОЯ</button>
     </div>
 </div>
 
@@ -42,111 +39,146 @@
 
     let user, data = {}, isBusy = false, currentTab = 'explore';
 
-    const zones = {
-        forest: { name: "🌲 Зеленый Лес", minLvl: 0, res: "wood", mobs: ["Слизень", "Белка-мутант"], mLevel: 1 },
-        caves: { name: "🪨 Глубокие Пещеры", minLvl: 2, res: "iron", mobs: ["Кротокрыс", "Каменный дух"], mLevel: 3 },
-        wasteland: { name: "💀 Забытые Земли", minLvl: 5, res: "copper", mobs: ["Орк-изгой", "Демон"], mLevel: 6 }
-    };
+    // Таблица опыта по твоему запросу
+    const expTable = [0, 150, 500, 1200, 2500, 4500, 7000, 10000, 15000]; 
 
-    const getLvl = (exp) => Math.floor(Math.sqrt((exp || 0) / 15)) + 1;
+    function getLevel(exp) {
+        let lvl = 1;
+        for (let i = 1; i < expTable.length; i++) {
+            if (exp >= expTable[i]) lvl = i + 1;
+        }
+        return lvl;
+    }
 
     async function auth(mode) {
-        const n = document.getElementById('u_nick').value;
-        const p = document.getElementById('u_pass').value;
-        const { data: u } = await sb.from('users').select('*').eq('username', n).single();
-        if (u && u.email_hidden === p) {
-            user = n; data = u; renderGame(); setInterval(regen, 30000);
-        } else { alert("Ошибка!"); }
+        const n = document.getElementById('u_nick').value.trim();
+        const p = document.getElementById('u_pass').value.trim();
+        if (mode === 'reg') {
+            await sb.from('users').insert({ id: crypto.randomUUID(), username: n, email_hidden: p });
+            alert("Создан!");
+        } else {
+            const { data: u } = await sb.from('users').select('*').eq('username', n).single();
+            if (u && u.email_hidden === p) {
+                user = n; data = u; renderGame(); setInterval(regen, 30000);
+            }
+        }
     }
 
     function renderGame() {
-        const charLvl = getLvl(data.char_exp);
+        const lvl = getLevel(data.char_exp);
+        const nextExp = expTable[lvl] || 'MAX';
+        const maxHp = 100 + (data.vit * 10);
+        
         document.getElementById('game-container').innerHTML = `
+            <h2>МИР ТЬМЫ</h2>
             <div class="box">
                 <div style="display:flex; justify-content:space-between; font-size:12px;">
-                    <span>🛡️ Уровень: ${charLvl}</span>
-                    <span>❤️ HP: ${data.current_hp}/${data.max_hp || 100}</span>
+                    <span>🛡️ Ур. ${lvl} (${data.char_exp}/${nextExp})</span>
+                    <span>❤️ HP: ${data.current_hp}/${maxHp}</span>
                 </div>
-                <div class="hp-bar"><div class="hp-fill" style="width:${(data.current_hp/(data.max_hp||100))*100}%"></div></div>
-                <div style="font-size:11px; margin-top:5px; color:#ffcc00;">💰 Золото: ${data.gold} | 🌲:${data.wood||0} | ⛏️:${data.iron||0} | 🟠:${data.copper||0}</div>
+                <div class="hp-bar"><div class="hp-fill" style="width:${(data.current_hp/maxHp)*100}%"></div></div>
+                <div style="font-size:11px; color:#ffcc00; margin-top:5px;">💰:${data.gold} | 🌲:${data.wood||0} | ⛏️:${data.iron||0} | 🔗:${data.steel_ingot||0}</div>
             </div>
 
             <div class="tabs">
-                <button class="tab-btn ${currentTab==='explore'?'tab-active':''}" onclick="currentTab='explore';renderGame()">ПУТЕШЕСТВИЕ</button>
-                <button class="tab-btn ${currentTab==='factory'?'tab-active':''}" onclick="currentTab='factory';renderGame()">ЗАВОД</button>
-                <button class="tab-btn ${currentTab==='market'?'tab-active':''}" onclick="currentTab='market';renderGame()">РЫНОК</button>
+                <button class="tab-btn ${currentTab==='explore'?'tab-active':''}" onclick="setTab('explore')">МИР</button>
+                <button class="tab-btn ${currentTab==='hero'?'tab-active':''}" onclick="setTab('hero')">ГЕРОЙ ${data.stat_points>0?'🔴':''}</button>
+                <button class="tab-btn ${currentTab==='factory'?'tab-active':''}" onclick="setTab('factory')">ЗАВОД</button>
+                <button class="tab-btn ${currentTab==='market'?'tab-active':''}" onclick="setTab('market')">РЫНОК</button>
             </div>
-
             <div id="tab-content">${renderTab()}</div>
-            <div id="log">Добро пожаловать в мир TSCHORNI...</div>
+            <div id="log">Система активна...</div>
         `;
     }
 
     function renderTab() {
-        if (currentTab === 'explore') {
-            return `<div class="box">
-                <select id="zone-sel" style="width:100%; background:#222; color:#fff; padding:10px; border-radius:8px; margin-bottom:10px;">
-                    <option value="forest">🌲 Зеленый Лес (Ур. 0)</option>
-                    <option value="caves">🪨 Пещеры (Ур. 2)</option>
-                    <option value="wasteland">💀 Пустоши (Ур. 5)</option>
-                </select>
-                <button class="btn" id="act-btn" onclick="explore()" ${isBusy?'disabled':''}>ИССЛЕДОВАТЬ (-10⚡)</button>
-            </div>`;
-        }
-        if (currentTab === 'factory') return `<div class="box"><h3>ПЛАВИЛЬНЯ</h3><button class="btn" onclick="smelt()">Плавить Сталь</button></div>`;
+        if (currentTab === 'hero') return renderHero();
+        if (currentTab === 'explore') return `<div class="box">
+            <select id="z-sel" style="width:100%; background:#222; color:#fff; padding:10px; border-radius:8px; margin-bottom:10px;">
+                <option value="forest">🌲 Лес (0+ Ур)</option>
+                <option value="caves">🪨 Пещеры (2+ Ур)</option>
+            </select>
+            <button class="btn" onclick="explore()">ИССЛЕДОВАТЬ (-10⚡)</button>
+        </div>`;
+        if (currentTab === 'factory') return `<div class="box"><h3>ЗАВОД</h3><button class="btn" onclick="smelt()">Плавить Сталь</button></div>`;
         return `<div class="box"><h3>РЫНОК</h3><button class="btn" onclick="sell('wood', 2)">Продать дерево</button></div>`;
     }
 
-    function addLog(msg, cl = '') {
-        const l = document.getElementById('log');
-        l.innerHTML = `<div class="${cl}">${msg}</div>` + l.innerHTML;
+    function renderHero() {
+        return `<div class="box">
+            <h3>ХАРАКТЕРИСТИКИ</h3>
+            <p style="color:#ffcc00;">Свободных очков: ${data.stat_points}</p>
+            <div class="stat-row"><span>💪 Сила: ${data.str}</span><button class="plus-btn" onclick="upStat('str')" ${data.stat_points<1?'disabled':''}>+</button></div>
+            <div class="stat-row"><span>🎯 Ловкость: ${data.agi}</span><button class="plus-btn" onclick="upStat('agi')" ${data.stat_points<1?'disabled':''}>+</button></div>
+            <div class="stat-row"><span>🧠 Интеллект: ${data.int}</span><button class="plus-btn" onclick="upStat('int')" ${data.stat_points<1?'disabled':''}>+</button></div>
+            <div class="stat-row"><span>🩸 Живучесть: ${data.vit}</span><button class="plus-btn" onclick="upStat('vit')" ${data.stat_points<1?'disabled':''}>+</button></div>
+            <button class="btn" onclick="logout()" style="background:#444; color:#fff; margin-top:15px;">ВЫЙТИ</button>
+        </div>`;
+    }
+
+    async function addExp(amount) {
+        data.char_exp += amount;
+        // Каждые 50 опыта даем 3 стата
+        let milestonesReached = Math.floor(data.char_exp / 50);
+        let prevMilestones = data.exp_milestone || 0;
+        
+        if (milestonesReached > prevMilestones) {
+            let newPoints = (milestonesReached - prevMilestones) * 3;
+            data.stat_points = (data.stat_points || 0) + newPoints;
+            data.exp_milestone = milestonesReached;
+            addLog(`⚡ Прогресс! Получено ${newPoints} очка характеристик!`, 'find');
+        }
+    }
+
+    async function upStat(s) {
+        if (data.stat_points > 0) {
+            data.stat_points--;
+            data[s]++;
+            await sb.from('users').update(data).eq('username', user);
+            renderGame();
+        }
     }
 
     async function explore() {
-        const zoneKey = document.getElementById('zone-sel').value;
-        const zone = zones[zoneKey];
-        const charLvl = getLvl(data.char_exp);
-
-        if (charLvl < zone.minLvl) return alert(`Нужен уровень ${zone.minLvl}!`);
         if (data.energy < 10) return alert("Мало энергии!");
-
         isBusy = true; renderGame();
-        addLog("Ты отправляешься в путь...");
-
+        
         setTimeout(async () => {
-            const roll = Math.random();
             data.energy -= 10;
+            const roll = Math.random();
+            // Бонус от интеллекта к добыче
+            const intBonus = Math.floor(data.int / 5);
 
-            if (roll < 0.4) { // Нашел ресурс
-                const amt = Math.floor(Math.random() * 3) + 1;
-                data[zone.res] = (data[zone.res] || 0) + amt;
-                addLog(`🍀 Нашел ${zone.res}: +${amt}`, 'log-find');
-            } else if (roll < 0.8) { // Встретил моба
-                const mob = zone.mobs[Math.floor(Math.random()*zone.mobs.length)];
-                const dmg = zone.mLevel * 5;
-                const reward = zone.mLevel * 10;
-                data.current_hp -= dmg;
-                data.gold += reward;
-                data.char_exp += zone.mLevel * 2;
-                addLog(`⚔️ Бой с ${mob}! Получено урона: ${dmg}. Награда: ${reward}💰`, 'log-lose');
+            if (roll < 0.5) {
+                const amt = 1 + intBonus;
+                data.wood = (data.wood || 0) + amt;
+                addLog(`Найдено дерево: +${amt}`, 'find');
             } else {
-                addLog("Дорога была спокойной.");
+                // Бой: Сила увеличивает урон мобу, Ловкость уменьшает урон тебе
+                const mobDmg = Math.max(1, 15 - Math.floor(data.agi / 2));
+                data.current_hp -= mobDmg;
+                data.gold += 10 + Math.floor(data.str / 2);
+                await addExp(20);
+                addLog(`Бой! Урон получен: ${mobDmg}. +20 опыта.`, 'lose');
             }
-
-            if (data.current_hp <= 0) {
-                addLog("💀 Ты потерял сознание! Золото потеряно.", 'log-lose');
-                data.current_hp = 20;
-                data.gold = Math.floor(data.gold * 0.5);
-            }
-
+            
             await sb.from('users').update(data).eq('username', user);
             isBusy = false; renderGame();
-        }, 2000);
+        }, 1500);
     }
 
+    function addLog(m, c) {
+        const l = document.getElementById('log');
+        const color = c==='find'?'#00ccff':c==='lose'?'#ff4444':'#aaa';
+        l.innerHTML = `<div style="color:${color}">> ${m}</div>` + l.innerHTML;
+    }
+
+    function setTab(t) { currentTab = t; renderGame(); }
+    function logout() { localStorage.clear(); location.reload(); }
     async function regen() {
+        const maxHp = 100 + (data.vit * 10);
         if (data.energy < 100) data.energy += 5;
-        if (data.current_hp < (data.max_hp || 100)) data.current_hp += 2;
+        if (data.current_hp < maxHp) data.current_hp += 3;
         renderGame();
     }
 </script>
