@@ -3,210 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Carnage Online</title>
+    <title>Carnage RPG Online</title>
     <style>
         :root { --gold: #f1c40f; --bg: #121212; --panel: #222; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --nrg: #9b59b6; }
         body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; margin: 0; padding: 10px; font-size: 14px; user-select: none; }
         .panel { background: var(--panel); padding: 12px; border-radius: 10px; border: 1px solid #333; margin-bottom: 8px; }
-        .auth-box { display: flex; flex-direction: column; gap: 10px; }
-        input { padding: 12px; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; outline: none; }
-        input:focus { border-color: var(--blue); }
-        .btn-main { padding: 14px; background: var(--blue); border: none; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
-        .bar-bg { flex-grow: 1; height: 10px; background: #000; border-radius: 5px; border: 1px solid #444; overflow: hidden; }
-        .fill { height: 100%; transition: 0.3s; width: 100%; }
-        #hp-fill { background: var(--green); }
-        #nrg-fill { background: var(--nrg); }
-        #work-fill { background: var(--gold); width: 0%; transition: none; }
-        
-        #log { height: 90px; overflow-y: auto; background: #000; padding: 10px; font-size: 12px; border-radius: 5px; margin-bottom: 8px; color: #bbb; border: 1px solid #333; }
+        input { width: 100%; padding: 12px; margin: 5px 0; background: #000; color: white; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 10px; background: var(--blue); border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .bar { height: 10px; background: #000; border-radius: 5px; border: 1px solid #444; overflow: hidden; margin: 5px 0; }
+        .fill { height: 100%; width: 100%; transition: 0.3s; }
+        #log { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 12px; border-radius: 5px; color: #bbb; border: 1px solid #333; }
         .screen { display: none; } .active { display: block; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 12px; background: #333; color: #fff; border: 1px solid #555; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .loc-title { font-size: 18px; color: var(--gold); text-align: center; display: block; margin-bottom: 10px; font-weight: bold; }
-        .avatar { font-size: 50px; text-align: center; margin: 10px 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="scr-auth" class="screen active">
-        <div class="panel auth-box">
-            <span class="loc-title">🏰 CARNAGE ONLINE</span>
-            <input type="text" id="auth-user" placeholder="Логин (Никнейм)">
-            <input type="password" id="auth-pass" placeholder="Пароль">
-            <button class="btn-main" onclick="handleAuth('login')">ВОЙТИ</button>
-            <button style="background:none; border:none; color:var(--blue); font-size:12px;" onclick="handleAuth('reg')">Зарегистрироваться</button>
-            <div id="auth-msg" style="color:var(--red); font-size:11px; text-align:center; margin-top:5px;"></div>
+        <div class="panel">
+            <h2 style="text-align:center; color:var(--gold)">CARNAGE ONLINE</h2>
+            <input type="text" id="user" placeholder="Ваш Ник">
+            <input type="password" id="pass" placeholder="Пароль">
+            <button onclick="handleAuth('login')">ВОЙТИ</button>
+            <button onclick="handleAuth('reg')" style="background:#27ae60">СОЗДАТЬ АККАУНТ</button>
+            <div id="msg" style="text-align:center; margin-top:10px; color:var(--red); font-size:12px;"></div>
         </div>
     </div>
 
     <div id="scr-game" class="screen">
         <div class="panel">
-            <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                <span>👤 <span id="ui-name">Герой</span></span>
-                <span>💰 <span id="gold">0</span></span>
+            <div style="display:flex; justify-content:space-between">
+                <b id="ui-nick">Герой</b> <b style="color:var(--gold)">💰 <span id="gold">0</span></b>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-                <span style="font-size:10px;">❤️</span>
-                <div class="bar-bg"><div id="hp-fill" class="fill"></div></div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
-                <span style="font-size:10px;">⚡</span>
-                <div class="bar-bg"><div id="nrg-fill" class="fill"></div></div>
-            </div>
-            <div id="work-ui" style="display:none; margin-top:10px; flex-direction:column; align-items:center;">
-                <div class="bar-bg" style="width:100%"><div id="work-fill" class="fill"></div></div>
-                <span id="work-label" style="font-size:10px; color:var(--gold); margin-top:2px;">ДОБЫЧА...</span>
-            </div>
+            <div class="bar"><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
+            <div class="bar"><div id="nrg-fill" class="fill" style="background:var(--nrg)"></div></div>
+            <div id="work-ui" style="display:none; font-size:10px; color:var(--gold); text-align:center;">⏳ ИДЕТ ДОБЫЧА...</div>
         </div>
-
         <div id="log"></div>
-
-        <div id="scr-world" class="screen active">
-            <div class="avatar">👤</div>
-            <span class="loc-title" id="loc-name">Город</span>
-            <div class="grid" id="nav-btns"></div>
-            <div id="act-btns" class="grid" style="margin-top:10px;"></div>
+        <div id="scr-world" class="active">
+            <h3 id="loc-name" style="text-align:center; color:var(--gold)">Город</h3>
+            <div id="nav-btns" class="grid"></div>
+            <div id="act-btns" class="grid"></div>
         </div>
-        
-        <button onclick="saveAndExit()" style="width:100%; margin-top:15px; background:none; border:none; color:#555; font-size:11px;">Выйти и сохранить</button>
+        <button onclick="saveAndExit()" style="background:none; border:none; color:#555; margin-top:20px;">Сохранить и выйти</button>
     </div>
 
     <script>
-        // ДАННЫЕ СЕРВЕРА
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
 
         let p = {}; 
         let isWorking = false;
 
-        async function sbFetch(method, body) {
-            const options = {
-                method: method,
-                headers: { 
-                    "apikey": SB_KEY, 
-                    "Authorization": `Bearer ${SB_KEY}`, 
-                    "Content-Type": "application/json", 
-                    "Prefer": "return=representation" 
-                }
-            };
-            if(body) options.body = JSON.stringify(body);
-            // Работаем с таблицей 'users', которую ты должен создать в Supabase
-            return fetch(`${SB_URL}/rest/v1/users${method==='POST'?'':'?username=eq.'+p.username}`, options);
-        }
-
         async function handleAuth(type) {
-            const user = document.getElementById('auth-user').value.trim();
-            const pass = document.getElementById('auth-pass').value.trim();
-            const msg = document.getElementById('auth-msg');
+            const user = document.getElementById('user').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+            const msg = document.getElementById('msg');
+            if(!user || !pass) return msg.innerText = "Заполни поля!";
+            
+            msg.style.color = "var(--gold)";
+            msg.innerText = "Связь с базой...";
 
-            if(!user || !pass) return msg.innerText = "Введите логин и пароль!";
-            msg.style.color = "var(--gold)"; msg.innerText = "Подключение...";
+            const headers = { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" };
 
-            if(type === 'reg') {
-                const res = await sbFetch('POST', { 
-                    username: user, 
-                    password: pass, 
-                    save_data: { hp:100, g:50, nrg:50, wood:0, iron:0, loc:'town' } 
-                });
-                if(res.ok) msg.innerText = "Аккаунт создан! Нажмите 'Войти'.";
-                else msg.innerText = "Ошибка! Возможно, ник занят.";
-            } else {
-                try {
-                    p.username = user;
-                    const res = await sbFetch('GET');
+            try {
+                if(type === 'reg') {
+                    const res = await fetch(`${SB_URL}/rest/v1/users`, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({ 
+                            username: user, 
+                            password: pass, 
+                            save_data: { hp: 100, nrg: 50, gold: 50, wood: 0, iron: 0, loc: 'town' } 
+                        })
+                    });
+                    if(res.ok) { msg.style.color = "#27ae60"; msg.innerText = "Аккаунт создан! Жми 'Войти'"; }
+                    else { const err = await res.json(); msg.innerText = "Ошибка: " + err.message; }
+                } else {
+                    const res = await fetch(`${SB_URL}/rest/v1/users?username=eq.${user}`, { headers: headers });
                     const data = await res.json();
-                    if(data && data.length > 0 && data[0].password === pass) {
+                    if(data.length > 0 && data[0].password === pass) {
                         p = { username: user, ...data[0].save_data };
                         startGame();
-                    } else msg.innerText = "Неверный логин или пароль!";
-                } catch(e) { msg.innerText = "Ошибка сервера. Проверь таблицу 'users'!"; }
-            }
+                    } else msg.innerText = "Неверный логин или пароль";
+                }
+            } catch(e) { msg.innerText = "Ошибка сети!"; }
         }
 
         function startGame() {
             document.getElementById('scr-auth').classList.remove('active');
             document.getElementById('scr-game').classList.add('active');
-            document.getElementById('ui-name').innerText = p.username;
-            addLog("С возвращением, " + p.username);
+            document.getElementById('ui-nick').innerText = p.username;
             move(p.loc || 'town');
-            setInterval(saveToCloud, 30000); // Автосохранение
+            setInterval(saveToCloud, 30000);
         }
 
         async function saveToCloud() {
             if(!p.username || isWorking) return;
-            await sbFetch('PATCH', { save_data: p });
-            console.log("Сохранено");
+            fetch(`${SB_URL}/rest/v1/users?username=eq.${p.username}`, {
+                method: 'PATCH',
+                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ save_data: p })
+            });
         }
 
         function move(k) {
             if(isWorking) return;
             p.loc = k;
-            const world = {
-                'town': { n: 'Город', paths: ['forest', 'mine'], acts: [{t: '🛌 Отдых (5💰)', f: 'rest'}] },
-                'forest': { n: 'Густой Лес', paths: ['town'], acts: [{t: '🪓 Рубить дерево (10с)', f: 'work', arg: 'wood'}] },
-                'mine': { n: 'Глубокая Шахта', paths: ['town'], acts: [{t: '⛏️ Добывать железо (30с)', f: 'work', arg: 'iron'}] }
+            const locs = {
+                'town': { n: 'Город', p: ['forest', 'mine'], a: [{t:'🛌 Отдых (5💰)', f:'rest'}] },
+                'forest': { n: 'Лес', p: ['town'], a: [{t:'🪓 Рубить (10с)', f:'work', res: 'wood'}] },
+                'mine': { n: 'Шахта', p: ['town'], a: [{t:'⛏️ Копать (20с)', f:'work', res: 'iron'}] }
             };
-            const l = world[k];
+            const l = locs[k];
             document.getElementById('loc-name').innerText = l.n;
             
             const nB = document.getElementById('nav-btns'); nB.innerHTML = '';
-            l.paths.forEach(pk => {
-                let b = document.createElement('button'); b.innerText = `➡ ${world[pk].n}`;
+            l.p.forEach(pk => {
+                let b = document.createElement('button'); b.innerText = "➡ " + pk;
                 b.onclick = () => move(pk); nB.appendChild(b);
             });
 
             const aB = document.getElementById('act-btns'); aB.innerHTML = '';
-            l.acts.forEach(a => {
+            l.a.forEach(a => {
                 let b = document.createElement('button'); b.innerText = a.t;
-                b.onclick = () => window[a.f](a.arg); aB.appendChild(b);
+                b.onclick = () => window[a.f](a.res); aB.appendChild(b);
             });
-            updateUI();
+            update();
         }
 
-        window.work = (type) => {
-            if(p.nrg < 10) return addLog("❌ Вы слишком устали!");
+        window.work = (res) => {
+            if(p.nrg < 10) return addLog("❌ Ты устал!");
             isWorking = true; p.nrg -= 10;
-            const time = type === 'wood' ? 10000 : 30000;
-            document.getElementById('work-ui').style.display = 'flex';
-            
-            let start = Date.now();
-            let timer = setInterval(() => {
-                let proc = ((Date.now() - start) / time) * 100;
-                document.getElementById('work-fill').style.width = proc + "%";
-                if(proc >= 100) {
-                    clearInterval(timer); isWorking = false;
-                    p[type]++; 
-                    document.getElementById('work-ui').style.display = 'none';
-                    addLog(`✅ Получено: 1 ${type === 'wood' ? 'дерево' : 'железо'}`); 
-                    move(p.loc);
-                }
-            }, 100);
-            updateUI();
+            document.getElementById('work-ui').style.display = 'block';
+            setTimeout(() => {
+                isWorking = false; p[res]++;
+                document.getElementById('work-ui').style.display = 'none';
+                addLog(`✅ Получено: 1 ${res}`);
+                move(p.loc);
+            }, res === 'wood' ? 10000 : 20000);
+            update();
         };
 
-        window.rest = () => {
-            if(p.g >= 5) { p.g -= 5; p.nrg = 50; p.hp = 100; addLog("🛌 Вы восстановили силы!"); }
-            else addLog("❌ Мало золота!");
-            updateUI();
-        };
-
-        function addLog(m) {
-            const l = document.getElementById('log'); l.innerHTML += `<div>${m}</div>`;
-            l.scrollTop = l.scrollHeight;
-        }
-
-        function updateUI() {
-            document.getElementById('gold').innerText = p.g;
+        window.rest = () => { if(p.gold >= 5) { p.gold -= 5; p.hp = 100; p.nrg = 50; addLog("🛌 Сил прибавилось!"); } update(); };
+        function addLog(m) { const l = document.getElementById('log'); l.innerHTML += `<div>${m}</div>`; l.scrollTop = l.scrollHeight; }
+        function update() {
+            document.getElementById('gold').innerText = p.gold;
             document.getElementById('hp-fill').style.width = p.hp + "%";
             document.getElementById('nrg-fill').style.width = (p.nrg/50*100) + "%";
         }
-
-        function saveAndExit() { 
-            saveToCloud().then(() => location.reload()); 
-        }
+        function saveAndExit() { saveToCloud().then(() => location.reload()); }
     </script>
 </body>
 </html>
