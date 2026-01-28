@@ -6,53 +6,54 @@
     <title>TSCHORNI GAME ONLINE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --stamina: #9b59b6; --border: #333; }
-        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; overflow-x: hidden; }
+        :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --red: #e74c3c; --green: #2ecc71; --border: #333; }
+        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; }
         
-        /* AUTH SCREEN */
         #auth-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; text-align: center; }
+        .auth-form { background: var(--panel); padding: 25px; border-radius: 12px; border: 2px solid var(--gold); width: 100%; max-width: 320px; }
+        .auth-form h2 { color: var(--gold); text-align: center; margin-bottom: 20px; }
         .auth-form input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; }
+        
         .auth-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .auth-tabs button { flex: 1; background: #222; border: 1px solid #444; color: #888; padding: 10px; border-radius: 5px; cursor: pointer; }
         .auth-tabs button.active { background: var(--gold); color: #000; border: none; }
-        .btn-main { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* GAME UI */
-        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .btn-main { width: 100%; padding: 14px; background: var(--gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        #auth-msg { font-size: 11px; text-align: center; margin-top: 10px; min-height: 20px; }
+
+        /* Интерфейс игры */
+        #game-ui { display: none; }
+        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; }
         .bar-bg { height: 14px; background: #222; border-radius: 7px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
         .fill { height: 100%; transition: 0.4s; width: 0%; }
-        .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 14px; font-weight: bold; color: #fff; z-index: 2; }
-        
-        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-        .screen { display: none; padding: 10px; } .active { display: block; }
-        
-        #log { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; border: 1px solid var(--border); margin-bottom: 10px; color: #aaa; }
+        .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 14px; color: #fff; z-index: 2; font-weight: bold; }
+        .screen { display: none; padding: 15px; } .active { display: block; }
+        #log { height: 100px; overflow-y: auto; background: #000; padding: 10px; font-size: 11px; border: 1px solid var(--border); margin: 10px; color: #aaa; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 65px; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; cursor: pointer; }
-        .nav-item.active { color: var(--gold); background: #111; }
-        
-        .item-row { background: #111; border: 1px solid #333; padding: 10px; border-radius: 5px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-item { flex: 1; text-align: center; padding: 10px; font-size: 10px; color: #555; cursor: pointer; }
+        .nav-item.active { color: var(--gold); }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
         <div class="auth-form">
-            <h2 style="color:var(--gold); margin:0 0 15px 0;">TSCHORNI GAME</h2>
+            <h2>TSCHORNI GAME</h2>
             <div class="auth-tabs">
                 <button id="tab-login" class="active" onclick="setAuthMode('login')">ВХОД</button>
                 <button id="tab-reg" onclick="setAuthMode('reg')">РЕГИСТРАЦИЯ</button>
             </div>
+            
             <input type="text" id="auth-nick" placeholder="Никнейм">
             <input type="email" id="auth-email" placeholder="Email" style="display:none;">
             <input type="password" id="auth-pass" placeholder="Пароль">
+            
             <button class="btn-main" onclick="handleAuth()" id="auth-btn">ВОЙТИ</button>
-            <p id="auth-msg" style="font-size:11px; margin-top:10px; color:var(--red);"></p>
+            <div id="auth-msg"></div>
         </div>
     </div>
 
-    <div id="game-ui" style="display:none;">
+    <div id="game-ui">
         <div class="header">
             <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:5px;">
                 <b id="ui-nick">---</b>
@@ -61,46 +62,13 @@
             <div class="bar-bg"><div class="bar-txt">❤️ <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
             <div class="bar-bg"><div class="bar-txt">💪 <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
         </div>
-
         <div id="log"></div>
-
-        <div id="scr-town" class="screen">
-            <div class="panel" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <button onclick="move('shop')">🛍️ Магазин</button>
-                <button onclick="move('craft')">⚒️ Кузница</button>
-                <button onclick="move('world')" style="grid-column:span 2; background:var(--blue); color:#fff; border:none;">🧭 КАРТА МИРА</button>
-                <button onclick="logout()" style="grid-column:span 2; background:#222; color:#666;">ВЫЙТИ ИЗ АККАУНТА</button>
-            </div>
+        <div id="scr-town" class="screen active">
+            <button class="btn-main" onclick="addLog('Вы гуляете по городу...')">Осмотреться</button>
+            <button class="btn-main" onclick="logout()" style="background:#333; color:#fff; margin-top:20px;">ВЫЙТИ</button>
         </div>
-
-        <div id="scr-world" class="screen">
-            <h4 style="margin:0 0 10px 0;">🗺️ Выберите путь</h4>
-            <div id="loc-list"></div>
-            <button onclick="move('town')" style="width:100%; margin-top:10px;">В город</button>
-        </div>
-
-        <div id="scr-action" class="screen">
-            <div class="panel" style="text-align:center;">
-                <h3 id="act-name">...</h3>
-                <div id="act-icon" style="font-size:50px; margin:10px 0;">❓</div>
-                <div class="bar-bg" id="act-hp-bar"><div id="act-fill" class="fill" style="background:var(--red)"></div></div>
-                <button onclick="doAction()" id="main-act-btn" style="width:100%; height:50px; background:var(--red); border:none; color:#fff; font-weight:bold; margin-top:15px;">ДЕЙСТВИЕ</button>
-                <button onclick="move('world')" style="width:100%; margin-top:10px; background:none; border:1px solid #444; color:#fff;">СБЕЖАТЬ</button>
-            </div>
-        </div>
-
-        <div id="scr-char" class="screen">
-            <div class="panel" id="char-info"></div>
-            <div class="panel"><h5>🎒 Ресурсы для крафта</h5><div id="res-list"></div></div>
-        </div>
-
-        <div id="scr-shop" class="screen"><div id="shop-list"></div><button onclick="move('town')" style="width:100%; margin-top:10px;">Назад</button></div>
-        <div id="scr-craft" class="screen"><div id="craft-list"></div><button onclick="move('town')" style="width:100%; margin-top:10px;">Назад</button></div>
-
         <div class="nav-bar">
-            <div id="n-town" class="nav-item" onclick="move('town')">🏙️<br>Город</div>
-            <div id="n-world" class="nav-item" onclick="move('world')">🧭<br>Карта</div>
-            <div id="n-char" class="nav-item" onclick="move('char')">👤<br>Герой</div>
+            <div class="nav-item active">🏙️<br>Город</div>
         </div>
     </div>
 
@@ -110,34 +78,15 @@
         const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
         let p = null;
-        let activeTarget = null;
         let authMode = 'login';
-        let lastActivity = Date.now();
 
-        const CONTENT = {
-            locs: {
-                'f': { n:'🌲 Тихий Лес', type:'peace', res:'wood', icon:'🌲' },
-                'm': { n:'⛏️ Шахта', type:'peace', res:'ore', icon:'💎' },
-                'b1': { n:'🌾 Поле (Lvl 1)', type:'battle', mob:{n:'Крыса', hp:40, dmg:4, g:10, exp:20, drop:'skin'} },
-                'b2': { n:'💀 Пещера (Lvl 5)', type:'battle', mob:{n:'Орк', hp:200, dmg:15, g:50, exp:100, drop:'bone'} }
-            },
-            shop: [
-                { id:'p1', n:'Зелье HP', cost:20, v:30 },
-                { id:'w1', n:'Ржавый Меч', cost:100, str:5 }
-            ],
-            craft: [
-                { id:'c1', n:'Меч Мастера', req:{wood:10, ore:5}, str:20 },
-                { id:'c2', n:'Кожаная Броня', req:{skin:10}, vit:10 }
-            ]
-        };
-
-        // --- AUTH ---
         function setAuthMode(mode) {
             authMode = mode;
-            document.getElementById('tab-login').className = mode==='login'?'active':'';
-            document.getElementById('tab-reg').className = mode==='reg'?'active':'';
-            document.getElementById('auth-email').style.display = mode==='reg'?'block':'none';
-            document.getElementById('auth-btn').innerText = mode==='login'?'ВОЙТИ':'ЗАРЕГИСТРИРОВАТЬСЯ';
+            document.getElementById('tab-login').className = mode === 'login' ? 'active' : '';
+            document.getElementById('tab-reg').className = mode === 'reg' ? 'active' : '';
+            document.getElementById('auth-email').style.display = mode === 'reg' ? 'block' : 'none';
+            document.getElementById('auth-btn').innerText = mode === 'login' ? 'ВОЙТИ' : 'ЗАРЕГИСТРИРОВАТЬСЯ';
+            document.getElementById('auth-msg').innerText = "";
         }
 
         async function handleAuth() {
@@ -145,174 +94,93 @@
             const email = document.getElementById('auth-email').value.trim();
             const pass = document.getElementById('auth-pass').value.trim();
             const msg = document.getElementById('auth-msg');
-            if(!nick || !pass) return msg.innerText = "Заполните поля!";
 
-            if(authMode === 'reg') {
-                const { data, error } = await supabase.auth.signUp({ email, password: pass, options: { data: { nickname: nick } } });
-                if(error) return msg.innerText = error.message;
-                // Бронируем ник в БД
-                await supabase.from('users').insert({ id: data.user.id, username: nick, email_hidden: email });
-                msg.style.color = 'var(--green)'; msg.innerText = "Подтвердите Email и войдите!";
-            } else {
-                const { data: u } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                if(!u) return msg.innerText = "Ник не найден!";
-                const { data, error } = await supabase.auth.signInWithPassword({ email: u.email_hidden, password: pass });
-                if(error) return msg.innerText = error.message;
-                loadData(data.user);
-            }
-        }
+            msg.style.color = "#fff";
+            msg.innerText = "Загрузка...";
 
-        // --- GAME ENGINE ---
-        async function loadData(user) {
-            const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
-            if(data && data.save_data && data.save_data.username) {
-                p = data.save_data;
-            } else {
-                p = { id:user.id, username:data.username, hp:100, st:100, gold:100, exp:0, lvl:1, vit:5, str:5, res:{wood:0, ore:0, skin:0, bone:0}, last_save: Date.now() };
-            }
-            init();
-        }
+            try {
+                if (authMode === 'reg') {
+                    // 1. Проверка ника на уникальность
+                    const { data: checkNick } = await supabase.from('users').select('username').eq('username', nick).single();
+                    if (checkNick) throw new Error("Этот ник уже занят!");
 
-        function init() {
-            const diff = Math.floor((Date.now() - p.last_save)/1000);
-            if(diff > 30) {
-                const max = 100 + p.vit*20;
-                p.hp = Math.min(max, p.hp + Math.floor(diff/15));
-                p.st = Math.min(100, p.st + Math.floor(diff/8));
-            }
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'block';
-            move('town');
-            updateUI();
-            setInterval(save, 30000);
-        }
+                    // 2. Регистрация
+                    const { data: authData, error: authError } = await supabase.auth.signUp({
+                        email, 
+                        password: pass,
+                        options: { data: { nickname: nick } }
+                    });
 
-        function move(scr) {
-            if(activeTarget && scr !== 'action') return addLog("Сначала закончи дело!");
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('scr-'+scr).classList.add('active');
-            if(document.getElementById('n-'+scr)) document.getElementById('n-'+scr).classList.add('active');
-            if(scr === 'world') renderWorld();
-            if(scr === 'char') renderChar();
-            if(scr === 'shop') renderShop();
-            if(scr === 'craft') renderCraft();
-            updateUI();
-        }
+                    if (authError) throw authError;
 
-        function renderWorld() {
-            const div = document.getElementById('loc-list'); div.innerHTML = '';
-            for(let id in CONTENT.locs) {
-                const l = CONTENT.locs[id];
-                div.innerHTML += `<div class="item-row"><span>${l.n}</span> <button onclick="startAct('${id}')">Войти</button></div>`;
-            }
-        }
+                    // 3. Создание записи в таблице (email_hidden нужен для входа по нику)
+                    if (authData.user) {
+                        const { error: dbError } = await supabase.from('users').insert({
+                            id: authData.user.id,
+                            username: nick,
+                            email_hidden: email,
+                            save_data: { username: nick, hp: 100, st: 100, gold: 100, lvl: 1 }
+                        });
+                        if (dbError) console.error("DB Error:", dbError);
+                    }
 
-        function startAct(id) {
-            activeTarget = { ...CONTENT.locs[id], id };
-            if(activeTarget.type === 'battle') {
-                activeTarget.curHp = activeTarget.mob.hp;
-                document.getElementById('act-name').innerText = activeTarget.mob.n;
-                document.getElementById('main-act-btn').innerText = 'УДАРИТЬ';
-            } else {
-                document.getElementById('act-name').innerText = 'Сбор ресурсов...';
-                document.getElementById('main-act-btn').innerText = 'СОБИРАТЬ';
-            }
-            move('action');
-        }
+                    msg.style.color = "var(--green)";
+                    msg.innerText = "Успех! Подтвердите почту и войдите.";
+                } else {
+                    // ВХОД
+                    const { data: uData } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
+                    if (!uData) throw new Error("Никнейм не найден!");
 
-        function doAction() {
-            lastActivity = Date.now();
-            if(p.st < 5) return addLog("Нет выносливости!");
-            p.st -= 5;
-            if(activeTarget.type === 'battle') {
-                activeTarget.curHp -= (p.str + 3);
-                p.hp -= activeTarget.mob.dmg;
-                if(activeTarget.curHp <= 0) {
-                    addLog(`Победа! +${activeTarget.mob.g}💰`);
-                    p.gold += activeTarget.mob.g; p.exp += activeTarget.mob.exp;
-                    p.res[activeTarget.mob.drop]++;
-                    activeTarget = null; move('world');
+                    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                        email: uData.email_hidden,
+                        password: pass
+                    });
+
+                    if (loginError) throw loginError;
+                    loadGame(loginData.user);
                 }
-            } else {
-                p.res[activeTarget.res]++;
-                addLog(`Добыто: ${activeTarget.res}`);
+            } catch (err) {
+                msg.style.color = "var(--red)";
+                msg.innerText = err.message;
             }
-            if(p.hp <= 0) { p.hp=20; activeTarget=null; move('town'); addLog("Вы потеряли сознание..."); }
-            updateUI();
         }
 
-        function renderShop() {
-            const div = document.getElementById('shop-list'); div.innerHTML = '<h4>🛍️ Магазин</h4>';
-            CONTENT.shop.forEach(i => {
-                div.innerHTML += `<div class="item-row"><span>${i.n} (${i.cost}💰)</span><button onclick="buy('${i.id}')">Купить</button></div>`;
-            });
-        }
-
-        function buy(id) {
-            const it = CONTENT.shop.find(i => i.id === id);
-            if(p.gold >= it.cost) { p.gold -= it.cost; addLog("Куплено: " + it.n); updateUI(); }
-        }
-
-        function renderCraft() {
-            const div = document.getElementById('craft-list'); div.innerHTML = '<h4>⚒️ Кузница</h4>';
-            CONTENT.craft.forEach(i => {
-                div.innerHTML += `<div class="item-row"><span>${i.n}</span><button onclick="craft('${i.id}')">Создать</button></div>`;
-            });
-        }
-
-        function craft(id) {
-            const it = CONTENT.craft.find(i => i.id === id);
-            let can = true;
-            for(let r in it.req) if(p.res[r] < it.req[r]) can = false;
-            if(can) {
-                for(let r in it.req) p.res[r] -= it.req[r];
-                addLog("Создано: " + it.n); renderCraft();
-            } else alert("Недостаточно ресурсов!");
-        }
-
-        function renderChar() {
-            document.getElementById('char-info').innerHTML = `<h3>${p.username}</h3>Уровень: ${p.lvl}<br>Сила: ${p.str} | Живучесть: ${p.vit}`;
-            document.getElementById('res-list').innerHTML = Object.entries(p.res).map(([k,v]) => v>0?`<div class="item-row">${k}: ${v}</div>`:'').join('');
+        async function loadGame(user) {
+            const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
+            if (data) {
+                p = data.save_data;
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
+                updateUI();
+                addLog("Добро пожаловать, " + p.username);
+            }
         }
 
         function updateUI() {
-            if(!p) return;
-            const max = 100 + p.vit*20;
+            if (!p) return;
             document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = Math.floor(p.gold);
-            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${max}`;
-            document.getElementById('hp-fill').style.width = (p.hp/max*100)+'%';
-            document.getElementById('st-val').innerText = `${p.st}/100`;
-            document.getElementById('st-fill').style.width = p.st+'%';
-            if(activeTarget && activeTarget.curHp) document.getElementById('act-fill').style.width = (activeTarget.curHp/activeTarget.mob.hp*100)+'%';
-        }
-
-        async function save() {
-            if(!p) return; p.last_save = Date.now();
-            await supabase.from('users').update({ save_data: p }).eq('id', p.id);
+            document.getElementById('gold').innerText = p.gold;
+            document.getElementById('hp-val').innerText = p.hp + "/100";
+            document.getElementById('hp-fill').style.width = p.hp + "%";
+            document.getElementById('st-val').innerText = p.st + "/100";
+            document.getElementById('st-fill').style.width = p.st + "%";
         }
 
         function addLog(m) {
-            const l = document.getElementById('log'); l.innerHTML += `<div>> ${m}</div>`; l.scrollTop = l.scrollHeight;
+            const l = document.getElementById('log');
+            l.innerHTML += `<div>> ${m}</div>`;
+            l.scrollTop = l.scrollHeight;
         }
 
-        function logout() { supabase.auth.signOut(); location.reload(); }
+        function logout() {
+            supabase.auth.signOut();
+            location.reload();
+        }
 
         window.onload = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if(session) loadData(session.user);
+            if (session) loadGame(session.user);
         };
-
-        setInterval(() => {
-            if(Date.now() - lastActivity > 3600000) logout();
-            if(p && !activeTarget) {
-                const max = 100 + p.vit*20;
-                if(p.hp < max) p.hp = Math.min(max, p.hp + 2);
-                if(p.st < 100) p.st = Math.min(100, p.st + 5);
-                updateUI();
-            }
-        }, 5000);
     </script>
 </body>
 </html>
