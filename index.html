@@ -6,7 +6,7 @@
     <title>TSCHORNI GAME ONLINE</title>
     <style>
         :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --stamina: #9b59b6; --border: #333; }
-        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; user-select: none; }
+        body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 100px; user-select: none; }
         
         .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
         .game-title { text-align: center; color: var(--gold); font-size: 14px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
@@ -19,14 +19,18 @@
         .screen { display: none; } .active { display: block; }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 12px; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); background: #333; }
+        button { padding: 12px; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
-        #log { height: 120px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; color: #888; border: 1px solid var(--border); margin-bottom: 10px; line-height: 1.4; }
-        
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 60px; }
+        #log, #chat-box { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; border: 1px solid var(--border); margin-bottom: 5px; }
+        #chat-box { color: #3498db; height: 80px; }
+        .chat-input-area { display: flex; gap: 5px; margin-bottom: 10px; }
+        .chat-input-area input { flex: 1; background: #111; border: 1px solid #444; color: #fff; padding: 5px; border-radius: 4px; }
+
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 60px; z-index: 1000; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; cursor: pointer; }
         .nav-item.active { color: var(--gold); background: #111; border-top: 2px solid var(--gold); }
+
+        .item-card { background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
@@ -39,71 +43,84 @@
         </div>
         <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
         <div class="bar-bg"><div class="bar-txt">💪 STAMINA: <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
-        <div style="text-align:center; font-size:9px; color:#666;">Level: <span id="ui-lvl">1</span></div>
+        <div style="text-align:center; font-size:9px;">Level: <span id="ui-lvl">1</span> | Points: <b id="ui-pts" style="color:var(--green)">0</b></div>
     </div>
 
     <div class="content" style="padding:10px;">
+        <div id="chat-box">Загрузка чата...</div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Написать в чат...">
+            <button onclick="sendChat()" style="padding:5px 10px;">💬</button>
+        </div>
         <div id="log"></div>
 
         <div id="scr-town" class="screen">
             <div class="panel">
-                <h4 style="text-align:center; margin:0 0 10px 0;">🏙️ Центральный Квартал</h4>
                 <div class="grid">
                     <button onclick="move('shop')">⚖️ Магазин</button>
+                    <button onclick="move('craft')">⚒️ Кузница</button>
                     <button onclick="move('hospital')">🏥 Больница</button>
+                    <button onclick="move('world')">🧭 Выход</button>
                 </div>
             </div>
-            <button style="width:100%; background:var(--blue); margin-top:10px; border:none;" onclick="move('world')">🧭 Выйти на охоту</button>
         </div>
 
         <div id="scr-world" class="screen">
-            <h4 style="text-align:center;">🗺️ Локация: <span id="loc-title">Дикие земли</span></h4>
-            <button style="width:100%; background:var(--red); height:60px; border:none; font-size:14px;" onclick="hunt()">⚔️ НАЙТИ ЦЕЛЬ</button>
-            <button style="width:100%; margin-top:15px;" onclick="move('town')">🏃 Вернуться в город</button>
+            <h4 style="text-align:center;">🗺️ Выбор локации</h4>
+            <div id="loc-list" class="grid"></div>
+            <button style="width:100%; margin-top:15px; background:var(--red);" onclick="hunt()">⚔️ ИСКАТЬ МОНСТРА</button>
+            <button style="width:100%; margin-top:10px;" onclick="move('town')">🏃 В город</button>
         </div>
 
         <div id="scr-battle" class="screen">
-            <div class="panel" style="text-align:center; border-color:var(--red);">
-                <div id="en-img" style="font-size:50px; margin-bottom:10px;">👾</div>
-                <h3 id="en-name" style="margin:5px 0; color:var(--red);">Противник</h3>
-                <div class="bar-bg" style="width:80%; margin:0 auto;"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
-                <p id="battle-status" style="font-size:10px; color:#666;">Идет бой...</p>
+            <div class="panel" style="text-align:center;">
+                <h3 id="en-name">Враг</h3>
+                <div id="en-img" style="font-size:50px;">👾</div>
+                <div class="bar-bg"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
                 <div class="grid" style="margin-top:15px;">
-                    <button onclick="battleHit()" id="hit-btn" style="background:var(--red); border:none; height:50px;">УДАРИТЬ</button>
-                    <button onclick="flee()" style="background:#000;">СБЕЖАТЬ</button>
+                    <button onclick="battleHit()" style="background:var(--red); height:50px;">УДАРИТЬ</button>
+                    <button onclick="flee()">СБЕЖАТЬ</button>
                 </div>
             </div>
         </div>
 
         <div id="scr-char" class="screen">
             <div class="panel">
-                <h4 style="margin:0 0 10px 0; color:var(--gold);">👤 Профиль игрока</h4>
-                <div id="char-stats-list"></div>
+                <h4 style="color:var(--gold)">👤 Характеристики</h4>
+                <div id="stat-list"></div>
+                <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
+                <h4 style="color:var(--gold)">🎒 Ресурсы</h4>
+                <div id="res-list"></div>
             </div>
+        </div>
+
+        <div id="scr-craft" class="screen panel">
+            <h4 style="text-align:center;">⚒️ Кузница</h4>
+            <div id="craft-items"></div>
+            <button style="width:100%; margin-top:10px;" onclick="move('town')">Назад</button>
         </div>
     </div>
 
     <div class="nav-bar">
-        <div id="nav-town" class="nav-item" onclick="move('town')">🏙️<br>Город</div>
-        <div id="nav-world" class="nav-item" onclick="move('world')">🗺️<br>Мир</div>
-        <div id="nav-char" class="nav-item" onclick="move('char')">👤<br>Герой</div>
+        <div id="n-town" class="nav-item" onclick="move('town')">🏙️<br>Город</div>
+        <div id="n-world" class="nav-item" onclick="move('world')">🗺️<br>Мир</div>
+        <div id="n-char" class="nav-item" onclick="move('char')">👤<br>Герой</div>
     </div>
 
     <script>
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
 
-        // Загрузка состояния (включая текущий бой)
-        let p = JSON.parse(localStorage.getItem('save_v_tschorni')) || {
-            username: "Player", hp:100, st:100, gold:100, exp:0, lvl:1, points:5,
+        let p = JSON.parse(localStorage.getItem('save_tschorni_v2')) || {
+            username: "Игрок_" + Math.floor(Math.random()*999), hp:100, st:100, gold:100, exp:0, lvl:1, points:5,
             str:5, agi:5, vit:5, int:5, loc: 'town',
-            enemy: null 
+            res: {fang:0, scale:0}, enemy: null
         };
 
-        const mobs = [
-            {n:'Лесной грабитель', i:'👤', hp:60, dmg:7, exp:25, g:15},
-            {n:'Дикий Вепрь', i:'🐗', hp:45, dmg:5, exp:15, g:8}
-        ];
+        const worldMap = {
+            'forest': { n:'Опушка', minLvl:0, mobs:[{n:'Крыса', i:'🐀', hp:40, dmg:5, exp:20, g:10, drop:'fang', chance:0.4}] },
+            'cave': { n:'Пещера', minLvl:3, mobs:[{n:'Орк', i:'👹', hp:150, dmg:15, exp:60, g:25, drop:'scale', chance:0.2}] }
+        };
 
         function addLog(m) {
             const l = document.getElementById('log');
@@ -111,142 +128,120 @@
             l.scrollTop = l.scrollHeight;
         }
 
-        function updateUI() {
-            let maxHp = 100 + p.vit * 20;
-            document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = Math.floor(p.gold);
-            document.getElementById('ui-lvl').innerText = p.lvl;
-            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
-            document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
-            document.getElementById('st-val').innerText = `${Math.floor(p.st)}/100`;
-            document.getElementById('st-fill').style.width = p.st+'%';
+        async function sendChat() {
+            const input = document.getElementById('chat-input');
+            if(!input.value) return;
+            const msg = `${p.username}: ${input.value}`;
+            input.value = '';
+            
+            try {
+                await fetch(`${SB_URL}/rest/v1/messages`, {
+                    method: 'POST',
+                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: msg })
+                });
+                loadChat();
+            } catch(e) { addLog("Ошибка чата"); }
+        }
 
-            if(p.enemy) {
-                document.getElementById('en-hp-fill').style.width = (p.enemy.curHp/p.enemy.hp*100)+'%';
-                document.getElementById('en-name').innerText = p.enemy.n;
-                document.getElementById('en-img').innerText = p.enemy.i;
-            }
+        async function loadChat() {
+            try {
+                const res = await fetch(`${SB_URL}/rest/v1/messages?order=created_at.desc&limit=5`, {
+                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
+                });
+                const data = await res.json();
+                document.getElementById('chat-box').innerHTML = data.reverse().map(m => `<div>${m.text}</div>`).join('');
+            } catch(e) {}
         }
 
         function move(scr) {
-            // Защита: если игрок в бою, он не может уйти в магазин или город
-            if(p.enemy && (scr === 'town' || scr === 'shop' || scr === 'hospital')) {
-                addLog("⚔️ Вы не можете уйти, пока идет бой!");
-                scr = 'battle';
-            }
-            
-            p.loc = (scr === 'battle') ? p.loc : scr;
+            if(p.enemy && scr !== 'battle') return addLog("⚔️ Вы в бою!");
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('scr-'+scr).classList.add('active');
+            if(document.getElementById('n-'+scr)) document.getElementById('n-'+scr).classList.add('active');
             
-            const target = document.getElementById('scr-' + scr);
-            if(target) target.classList.add('active');
-            
-            const nav = document.getElementById('nav-' + (scr === 'battle' ? 'world' : (scr === 'shop' ? 'town' : scr)));
-            if(nav) nav.classList.add('active');
-            
+            if(scr === 'char') renderChar();
+            if(scr === 'world') renderWorld();
+            if(scr === 'craft') renderCraft();
             updateUI();
             save();
         }
 
+        function renderWorld() {
+            const list = document.getElementById('loc-list');
+            list.innerHTML = '';
+            for(let id in worldMap) {
+                const loc = worldMap[id];
+                list.innerHTML += `<button onclick="p.loc='${id}'; addLog('Вы перешли: ${loc.n}')" ${p.lvl < loc.minLvl ? 'disabled' : ''}>${loc.n} (Lvl ${loc.minLvl})</button>`;
+            }
+        }
+
+        function renderChar() {
+            const sl = document.getElementById('stat-list');
+            sl.innerHTML = `<div>Сила: ${p.str} <button onclick="addStat('str')">+</button></div>
+                            <div>Ловкость: ${p.agi} <button onclick="addStat('agi')">+</button></div>
+                            <div>Живучесть: ${p.vit} <button onclick="addStat('vit')">+</button></div>`;
+            document.getElementById('res-list').innerHTML = `Клыки: ${p.res.fang} | Чешуя: ${p.res.scale}`;
+            document.getElementById('ui-pts').innerText = p.points;
+        }
+
+        function addStat(s) {
+            if(p.points > 0) { p[s]++; p.points--; renderChar(); updateUI(); save(); }
+        }
+
         function hunt() {
-            if(p.hp < 20) return addLog("🏥 Вы слишком ранены! Нужно подлечиться.");
-            const m = mobs[Math.floor(Math.random()*mobs.length)];
+            const loc = worldMap[p.loc] || worldMap.forest;
+            const m = loc.mobs[0];
             p.enemy = { ...m, curHp: m.hp };
-            addLog(`⚔️ Внимание! На вас напал <b>${p.enemy.n}</b>!`);
             move('battle');
         }
 
         function battleHit() {
             if(!p.enemy) return;
-
-            // Логика урона: если стамины мало, урон минимален, но бить можно
-            let isExhausted = p.st < 10;
-            let dmg = isExhausted ? (Math.floor(Math.random()*2)+1) : (p.str + Math.floor(Math.random()*5));
-            
-            if(!isExhausted) p.st -= 10; 
-            else addLog("💨 Вы выдохлись! Удары стали слабыми...");
-
+            let dmg = (p.st >= 10) ? (p.str + 5) : 2;
+            if(p.st >= 10) p.st -= 10;
             p.enemy.curHp -= dmg;
-            addLog(`Вы ударили противника на <b>${dmg}</b> урона.`);
-
             if(p.enemy.curHp <= 0) {
-                addLog(`🏆 Победа! Вы получили ${p.enemy.exp} опыта и ${p.enemy.g} золота.`);
-                p.exp += p.enemy.exp; p.gold += p.enemy.g;
-                p.enemy = null;
-                checkLvl();
-                save();
-                return move('world');
-            }
-
-            // Ход противника
-            let eDmg = Math.max(1, p.enemy.dmg - Math.floor(p.vit/4));
-            p.hp -= eDmg;
-            addLog(`${p.enemy.n} нанес вам <b>${eDmg}</b> урона.`);
-
-            if(p.hp <= 0) {
-                p.hp = 20; p.enemy = null;
-                addLog("💀 Вы потеряли сознание и пришли в себя в городе...");
-                move('town');
-            }
-            updateUI();
-            save();
-        }
-
-        function checkLvl() {
-            let next = p.lvl * 200;
-            if(p.exp >= next) {
-                p.lvl++; p.points += 3;
-                addLog(`🎊 Поздравляем! Ваш уровень повышен до <b>${p.lvl}</b>!`);
-            }
-        }
-
-        function flee() {
-            if(Math.random() > 0.5) {
-                p.enemy = null;
-                addLog("🏳️ Вам удалось успешно сбежать.");
-                move('world');
+                addLog(`🏆 Победа! +${p.enemy.g} золота.`);
+                p.gold += p.enemy.g; p.exp += p.enemy.exp;
+                if(Math.random() < p.enemy.chance) p.res[p.enemy.drop]++;
+                p.enemy = null; move('world');
             } else {
-                addLog("🚫 Не удалось сбежать! Враг преградил путь.");
-                battleHit(); // Враг бьет при неудачном побеге
+                p.hp -= p.enemy.dmg;
+                if(p.hp <= 0) { p.hp=20; p.enemy=null; move('town'); }
             }
+            updateUI(); save();
         }
 
-        async function save() {
-            localStorage.setItem('save_v_tschorni', JSON.stringify(p));
-            try {
-                await fetch(`${SB_URL}/rest/v1/users?username=eq.${p.username}`, {
-                    method: 'PATCH',
-                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ save_data: p })
-                });
-            } catch(e) {}
+        function renderCraft() {
+            document.getElementById('craft-items').innerHTML = `<div class="item-card">
+                <span>🔥 Клинок (10 клыков)</span>
+                <button onclick="doCraft('fang', 10)">Создать</button>
+            </div>`;
         }
 
-        // РЕГЕНЕРАЦИЯ (работает каждые 4 секунды)
-        setInterval(() => {
-            let maxHp = 100 + p.vit * 20;
-            if(!p.enemy) {
-                // Вне боя восстанавливаемся быстро
-                if(p.hp < maxHp) p.hp = Math.min(maxHp, p.hp + 4);
-                if(p.st < 100) p.st = Math.min(100, p.st + 10);
-            } else {
-                // В бою восстанавливается только 1 стамина (чтобы можно было бить)
-                if(p.st < 100) p.st = Math.min(100, p.st + 2);
-            }
-            updateUI();
-        }, 4000);
+        function doCraft(res, amt) {
+            if(p.res[res] >= amt) { p.res[res] -= amt; addLog("⚒️ Предмет создан!"); }
+            else { alert("Мало ресурсов!"); }
+            renderChar(); save();
+        }
 
-        // Инициализация при запуске
-        window.onload = () => {
-            addLog("Добро пожаловать в <b>TSCHORNI GAME ONLINE</b>!");
-            if(p.enemy) {
-                addLog("⚔️ Бой продолжается...");
-                move('battle');
-            } else {
-                move(p.loc || 'town');
-            }
-        };
+        function updateUI() {
+            let maxHp = 100 + p.vit*20;
+            document.getElementById('ui-nick').innerText = p.username;
+            document.getElementById('gold').innerText = p.gold;
+            document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
+            document.getElementById('st-fill').style.width = p.st+'%';
+            if(p.enemy) document.getElementById('en-hp-fill').style.width = (p.enemy.curHp/p.enemy.hp*100)+'%';
+        }
+
+        async function save() { localStorage.setItem('save_tschorni_v2', JSON.stringify(p)); }
+
+        setInterval(loadChat, 3000);
+        setInterval(() => { if(!p.enemy) { p.st = Math.min(100, p.st+10); updateUI(); } }, 5000);
+
+        window.onload = () => { if(p.enemy) move('battle'); else move(p.loc || 'town'); loadChat(); };
     </script>
 </body>
 </html>
