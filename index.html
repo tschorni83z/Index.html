@@ -1,61 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TSCHORNI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TSCHORNI RPG</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #0a0a0a; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .box { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-top: 20px; }
+        h1 { color: #ffcc00; letter-spacing: 4px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; background: #ffcc00; color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        .btn-reg { background: none; color: #ffcc00; border: 1px solid #ffcc00; }
+        #status { margin-top: 20px; color: #888; font-size: 14px; }
+    </style>
 </head>
-<body style="background:#000; color:#fff; text-align:center; font-family:sans-serif;">
+<body>
 
-    <h2>TSCHORNI DEBUG</h2>
-    
-    <input type="text" id="ni" placeholder="Ник" style="width:80%; padding:15px; margin:10px;">
-    <input type="password" id="pa" placeholder="Пароль" style="width:80%; padding:15px; margin:10px;">
-    
-    <button onclick="go('login')" style="width:80%; padding:15px; background:#ffcc00; font-weight:bold;">ВОЙТИ</button>
-    <button onclick="go('reg')" style="width:80%; padding:15px; background:none; color:#ffcc00; border:1px solid #ffcc00; margin-top:10px;">РЕГИСТРАЦИЯ</button>
-
-    <p id="st" style="color:#888; margin-top:20px;">Статус: Жду клика...</p>
+    <div id="auth-screen" class="container">
+        <h1>TSCHORNI</h1>
+        <div class="box">
+            <input type="text" id="nick" placeholder="Никнейм">
+            <input type="password" id="pass" placeholder="Пароль">
+            <button class="btn" onclick="app('login')">ВОЙТИ</button>
+            <button class="btn btn-reg" onclick="app('reg')">СОЗДАТЬ АККАУНТ</button>
+        </div>
+        <p id="status">Статус: Готов</p>
+    </div>
 
     <script>
-        // Данные проекта
-        const URL = "https://xgnzgapvvulizxtqdyzn.supabase.co";
-        const KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        const supabase = window.supabase.createClient(URL, KEY);
+        const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
+        const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        async function go(mode) {
-            // ПРОВЕРКА: Если это сработает, значит JS живой
-            alert("Нажато: " + mode); 
-            document.getElementById('st').innerText = "Обработка...";
-
-            const nick = document.getElementById('ni').value.trim();
-            const pass = document.getElementById('pa').value.trim();
+        async function app(mode) {
+            const status = document.getElementById('status');
+            const nick = document.getElementById('nick').value.trim();
+            const pass = document.getElementById('pass').value.trim();
 
             if (!nick || !pass) return alert("Заполни поля!");
-            const mail = nick.toLowerCase() + "@tschorni-game.com";
+            status.innerText = "⏳ Загрузка...";
+
+            const email = nick.toLowerCase() + "@game-app.com";
 
             try {
                 if (mode === 'reg') {
-                    const { data, error } = await supabase.auth.signUp({ email: mail, password: pass });
+                    // 1. Создаем логин
+                    const { data, error } = await supabase.auth.signUp({ email, password: pass });
                     if (error) throw error;
-                    
+
+                    // 2. Создаем профиль в таблице
                     if (data.user) {
-                        await supabase.from('users').insert({ id: data.user.id, username: nick, email_hidden: mail });
+                        const { error: dbErr } = await supabase.from('users').insert({
+                            id: data.user.id,
+                            username: nick,
+                            email_hidden: email
+                        });
+                        if (dbErr) throw dbErr;
                     }
-                    alert("Регистрация успешна! Теперь входи.");
+                    alert("Герой создан! Теперь нажми ВОЙТИ.");
+                    status.innerText = "Аккаунт готов!";
                 } else {
-                    const { data: u, error: uE } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                    if (!u || uE) throw new Error("Ник не найден");
+                    // ВХОД
+                    const { data: user, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
+                    if (!user || uErr) throw new Error("Ник не найден!");
 
-                    const { error: lE } = await supabase.auth.signInWithPassword({ email: u.email_hidden, password: pass });
-                    if (lE) throw lE;
+                    const { error: lErr } = await supabase.auth.signInWithPassword({ email: user.email_hidden, password: pass });
+                    if (lErr) throw lErr;
 
-                    alert("УРА! ТЫ В ИГРЕ!");
+                    alert("ТЫ В ИГРЕ!");
+                    document.body.innerHTML = `<h1 style="color:#ffcc00; margin-top:100px;">ПРИВЕТ, ${nick.toUpperCase()}!</h1><button onclick="location.reload()" style="padding:10px; background:#333; color:#fff; border:none; border-radius:5px;">ВЫЙТИ</button>`;
                 }
-            } catch (e) {
-                alert("ОШИБКА: " + e.message);
-                document.getElementById('st').innerText = "Ошибка: " + e.message;
+            } catch (err) {
+                alert("ОШИБКА: " + err.message);
+                status.innerText = "Ошибка: " + err.message;
             }
         }
     </script>
