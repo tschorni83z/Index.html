@@ -7,83 +7,87 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --gold: #ffcc00; --bg: #0a0a0a; --panel: #161616; --border: #2a2a2a; }
-        body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
-        .container { width: 100%; max-width: 360px; }
+        body { background: var(--bg); color: #e0e0e0; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 360px; margin-top: 50px; }
         .section { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
         input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 6px; box-sizing: border-box; }
         .btn { width: 100%; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 8px; border: none; text-transform: uppercase; background: var(--gold); color: #000; }
         .btn-reg { background: transparent; border: 1px solid var(--gold); color: var(--gold); margin-top: 10px; }
-        #log { font-size: 12px; text-align: center; margin-top: 10px; color: #888; }
+        #status-log { font-size: 12px; text-align: center; margin-top: 15px; color: #888; line-height: 1.4; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen" class="container">
-        <h2 style="text-align:center; color:var(--gold)">TSCHORNI</h2>
+        <h2 style="text-align:center; color:var(--gold); letter-spacing:3px;">TSCHORNI</h2>
         
         <div class="section">
-            <h3 style="margin-top:0">ВХОД</h3>
+            <h3 style="margin-top:0; font-size:14px; color:var(--gold)">ВХОД</h3>
             <input type="text" id="l-nick" placeholder="Никнейм">
             <input type="password" id="l-pass" placeholder="Пароль">
             <button class="btn" onclick="gameAuth('login')">ВОЙТИ</button>
         </div>
 
         <div class="section">
-            <h3 style="margin-top:0">РЕГИСТРАЦИЯ</h3>
+            <h3 style="margin-top:0; font-size:14px; color:var(--gold)">РЕГИСТРАЦИЯ</h3>
             <input type="text" id="r-nick" placeholder="Новый ник">
-            <input type="password" id="r-pass" placeholder="Пароль (мин. 6 симв.)">
+            <input type="password" id="r-pass" placeholder="Пароль (6+ знаков)">
             <button class="btn btn-reg" onclick="gameAuth('reg')">СОЗДАТЬ ГЕРОЯ</button>
         </div>
         
-        <div id="log">Статус: Ожидание...</div>
+        <div id="status-log">Система: Ожидание действий...</div>
     </div>
 
-    <div id="game-ui" style="display:none; text-align:center; margin-top:50px;">
-        <h1 style="color:var(--gold)">ТЫ В ИГРЕ!</h1>
-        <button class="btn" onclick="location.reload()">ВЫЙТИ</button>
+    <div id="game-ui" style="display:none; text-align:center; margin-top:100px;">
+        <h1 style="color:var(--gold)">ВЫ В ИГРЕ!</h1>
+        <p>Добро пожаловать в мир Tschorni.</p>
+        <button class="btn" style="width:200px" onclick="location.reload()">ВЫЙТИ</button>
     </div>
 
     <script>
-        // Проверяем наличие библиотеки сразу
-        window.onload = () => {
-            if (!window.supabase) {
-                document.getElementById('log').innerText = "ОШИБКА: Библиотека Supabase не загружена!";
-                document.getElementById('log').style.color = "red";
-            } else {
-                console.log("Supabase Ready");
-            }
-        };
-
+        // Данные подключения
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        let supabase;
+
+        // Инициализация при загрузке
+        window.onload = () => {
+            const log = document.getElementById('status-log');
+            if (typeof window.supabase === 'undefined') {
+                log.innerText = "ОШИБКА: Библиотека Supabase не загрузилась. Проверьте интернет или VPN.";
+                log.style.color = "red";
+                return;
+            }
+            supabase = window.supabase.createClient(SB_URL, SB_KEY);
+            log.innerText = "Система: Подключено. Готов к работе.";
+        };
 
         async function gameAuth(mode) {
-            const status = document.getElementById('log');
-            
-            // Получаем данные в зависимости от режима
+            const log = document.getElementById('status-log');
             const nick = document.getElementById(mode === 'login' ? 'l-nick' : 'r-nick').value.trim();
             const pass = document.getElementById(mode === 'login' ? 'l-pass' : 'r-pass').value.trim();
 
             if (!nick || !pass) {
-                alert("Заполни все поля!");
+                alert("Пожалуйста, заполните все поля!");
                 return;
             }
 
-            status.innerText = "⏳ Выполняю запрос...";
-            status.style.color = "white";
+            log.innerText = "⏳ Выполняю запрос...";
+            log.style.color = "white";
 
             try {
+                // Генерируем внутренний email
                 const fakeEmail = nick.toLowerCase() + "@game.local";
 
                 if (mode === 'reg') {
-                    // РЕГИСТРАЦИЯ
-                    const { data, error } = await supabase.auth.signUp({
+                    // 1. Регистрация
+                    const { data, error: authErr } = await supabase.auth.signUp({
                         email: fakeEmail,
                         password: pass
                     });
-                    if (error) throw error;
+                    if (authErr) throw authErr;
 
+                    // 2. Создание записи в таблице (убедитесь, что SQL выполнен)
                     if (data.user) {
                         const { error: dbErr } = await supabase.from('users').insert({
                             id: data.user.id,
@@ -93,12 +97,13 @@
                         });
                         if (dbErr) throw dbErr;
                     }
-                    alert("Герой создан! Теперь нажми кнопку ВОЙТИ");
-                    status.innerText = "Успех! Входи.";
+                    alert("Герой создан! Теперь используйте форму ВХОД.");
+                    log.innerText = "Система: Аккаунт создан. Войдите.";
+                    log.style.color = "#00ff88";
                 } else {
                     // ВХОД
                     const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
-                    if (!u || uErr) throw new Error("Ник не найден!");
+                    if (!u || uErr) throw new Error("Герой не найден. Зарегистрируйтесь сначала.");
 
                     const { error: logErr } = await supabase.auth.signInWithPassword({
                         email: u.email_hidden,
@@ -106,13 +111,15 @@
                     });
                     if (logErr) throw logErr;
 
+                    // Переход в игру
                     document.getElementById('auth-screen').style.display = 'none';
                     document.getElementById('game-ui').style.display = 'block';
                 }
             } catch (err) {
-                alert("ОШИБКА: " + err.message);
-                status.innerText = "Ошибка: " + err.message;
-                status.style.color = "red";
+                console.error(err);
+                alert("Ошибка: " + err.message);
+                log.innerText = "Ошибка: " + err.message;
+                log.style.color = "#ff4d4d";
             }
         }
     </script>
