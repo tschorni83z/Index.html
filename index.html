@@ -2,121 +2,85 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TSCHORNI MOBILE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSCHORNI TEST</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --gold: #ffcc00; --bg: #0a0a0a; --panel: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 20px; text-align: center; margin: 0; }
-        .box { background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid #333; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { color: var(--gold); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 5px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--gold); }
-        .btn { width: 100%; padding: 15px; background: var(--gold); color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
-        .btn:active { transform: scale(0.98); }
-        .btn-reg { background: none; color: var(--gold); border: 1px solid var(--gold); margin-top: 15px; }
-        #status { color: #888; margin-top: 20px; font-size: 14px; min-height: 20px; }
-        #game-ui { display: none; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .box { background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; }
+        input { width: 100%; padding: 12px; margin: 5px 0; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; margin-top: 10px; background: #ffcc00; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; }
+        #status { margin-top: 20px; color: #ffcc00; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen">
-        <h2>Tschorni</h2>
-        <p style="font-size: 12px; opacity: 0.6; margin-top: 0;">Online RPG Mobile</p>
-        
-        <div class="box">
-            <input type="text" id="nick" placeholder="Никнейм (без пробелов)">
-            <input type="password" id="pass" placeholder="Пароль (мин. 6 знаков)">
-            
-            <button class="btn" onclick="doAction('login')">Войти в игру</button>
-            <button class="btn btn-reg" onclick="doAction('reg')">Создать героя</button>
-        </div>
-
-        <div id="status">Статус: Готов к запуску</div>
+    <h2>TSCHORNI DEBUG</h2>
+    <div class="box">
+        <input type="text" id="nick" placeholder="Ник">
+        <input type="password" id="pass" placeholder="Пароль">
+        <button onclick="testAction('login')">ВОЙТИ</button>
+        <button onclick="testAction('reg')" style="background:none; color:#ffcc00; border:1px solid #ffcc00;">РЕГИСТРАЦИЯ</button>
     </div>
-
-    <div id="game-ui">
-        <h2 style="margin-top: 50px;">Вы в игре!</h2>
-        <div class="box">
-            <p id="player-label" style="font-size: 20px;"></p>
-            <p>Добро пожаловать в мир Tschorni. База данных подключена.</p>
-            <button class="btn" style="background:#444; color:#fff;" onclick="location.reload()">Выйти</button>
-        </div>
-    </div>
+    <div id="status">Статус: Ожидание клика...</div>
 
     <script>
-        // Данные твоего проекта
-        const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
-        const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
-        
-        // Создаем клиент Supabase
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        // Проверка подключения при загрузке
+        window.onerror = function(msg) {
+            document.getElementById('status').innerText = "ОШИБКА КОДА: " + msg;
+        };
 
-        async function doAction(type) {
+        function testAction(type) {
+            console.log("Клик зафиксирован");
             const status = document.getElementById('status');
-            const nickInput = document.getElementById('nick').value.trim();
-            const passInput = document.getElementById('pass').value.trim();
+            status.innerText = "⏳ КНОПКА НАЖАТА: " + type;
 
-            if (!nickInput || !passInput) {
-                alert("Введите ник и пароль!");
+            const nick = document.getElementById('nick').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+
+            if (!nick || !pass) {
+                alert("Заполни поля!");
+                status.innerText = "Ошибка: Пустые поля";
                 return;
             }
 
-            status.innerText = "⏳ Магия в процессе...";
-            status.style.color = "#ffcc00";
+            // Проверка библиотеки
+            if (typeof window.supabase === 'undefined') {
+                alert("Supabase не загружен!");
+                status.innerText = "Ошибка: Библиотека отсутствует";
+                return;
+            }
 
-            // Генерируем нормальный Email, который Supabase примет
-            const fakeEmail = nickInput.toLowerCase() + "@game-tschorni.com";
+            executeAuth(type, nick, pass);
+        }
+
+        async function executeAuth(type, nick, pass) {
+            const status = document.getElementById('status');
+            const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
+            const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
+            const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+            const fakeEmail = nick.toLowerCase() + "@tschorni-app.com";
 
             try {
                 if (type === 'reg') {
-                    // 1. РЕГИСТРАЦИЯ В AUTH
-                    const { data, error } = await supabase.auth.signUp({ 
-                        email: fakeEmail, 
-                        password: passInput 
-                    });
+                    const { data, error } = await supabase.auth.signUp({ email: fakeEmail, password: pass });
                     if (error) throw error;
-
-                    // 2. СОХРАНЕНИЕ НИКА В ТАБЛИЦУ USERS
                     if (data.user) {
-                        const { error: dbErr } = await supabase.from('users').insert({
-                            id: data.user.id,
-                            username: nickInput,
-                            email_hidden: fakeEmail
-                        });
-                        if (dbErr) throw dbErr;
+                        await supabase.from('users').insert({ id: data.user.id, username: nick, email_hidden: fakeEmail });
                     }
-                    
-                    alert("Герой " + nickInput + " создан! Теперь нажми кнопку ВОЙТИ.");
-                    status.innerText = "Аккаунт готов. Входите!";
-                    status.style.color = "#00ff88";
-
+                    alert("Успех! Теперь входи.");
+                    status.innerText = "Готово. Можно входить.";
                 } else {
-                    // 3. ВХОД (сначала ищем почту по нику)
-                    const { data: userRow, error: uErr } = await supabase.from('users')
-                        .select('email_hidden')
-                        .eq('username', nickInput)
-                        .single();
-
-                    if (!userRow || uErr) throw new Error("Герой не найден! Сначала создайте его.");
-
-                    const { error: loginErr } = await supabase.auth.signInWithPassword({ 
-                        email: userRow.email_hidden, 
-                        password: passInput 
-                    });
-                    if (loginErr) throw loginErr;
-
-                    // ПОБЕДА!
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('game-ui').style.display = 'block';
-                    document.getElementById('player-label').innerText = "Привет, " + nickInput;
+                    const { data: u, error: uErr } = await supabase.from('users').select('email_hidden').eq('username', nick).single();
+                    if (!u || uErr) throw new Error("Ник не найден");
+                    const { error: lErr } = await supabase.auth.signInWithPassword({ email: u.email_hidden, password: pass });
+                    if (lErr) throw lErr;
+                    alert("ВХОД ВЫПОЛНЕН!");
+                    status.innerText = "Вы в системе!";
                 }
             } catch (err) {
-                console.error(err);
                 alert("ОШИБКА: " + err.message);
                 status.innerText = "Ошибка: " + err.message;
-                status.style.color = "#ff4d4d";
             }
         }
     </script>
