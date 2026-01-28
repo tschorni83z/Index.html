@@ -3,307 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Carnage: Craft & Runes</title>
+    <title>TSCHORNI GAME ONLINE</title>
     <style>
-        :root { --gold: #f1c40f; --bg: #0a0a0a; --panel: #1a1a1a; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --stamina: #9b59b6; --border: #333; }
+        :root { --gold: #f1c40f; --bg: #0d0d0d; --panel: #1a1a1a; --blue: #3498db; --red: #e74c3c; --green: #2ecc71; --stamina: #9b59b6; --border: #333; }
         body { background: var(--bg); color: #ddd; font-family: 'Verdana', sans-serif; margin: 0; padding-bottom: 80px; user-select: none; }
-        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 10; }
+        
+        .header { background: #000; padding: 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .game-title { text-align: center; color: var(--gold); font-size: 14px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+        
         .bar-bg { height: 12px; background: #222; border-radius: 6px; border: 1px solid #444; overflow: hidden; margin: 4px 0; position: relative; }
         .fill { height: 100%; transition: 0.3s; width: 100%; }
         .bar-txt { position: absolute; width: 100%; text-align: center; font-size: 9px; line-height: 12px; font-weight: bold; color: #fff; z-index: 2; }
         
-        .content { padding: 10px; }
         .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
         .screen { display: none; } .active { display: block; }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 10px; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 5px; font-size: 12px; font-weight: bold; }
-        button:active { background: #444; }
+        button { padding: 12px; background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); background: #333; }
 
-        /* Кукла персонажа */
-        .char-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
-        .slot { background: #111; border: 1px solid #444; height: 55px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 20px; border-radius: 4px; position: relative; }
-        .slot-name { font-size: 8px; color: #666; position: absolute; bottom: 2px; }
-
-        /* Лог боя */
-        #log { height: 100px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; color: #888; border: 1px solid var(--border); margin-bottom: 10px; }
+        #log { height: 120px; overflow-y: auto; background: #000; padding: 8px; font-size: 11px; color: #888; border: 1px solid var(--border); margin-bottom: 10px; line-height: 1.4; }
         
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); }
-        .nav-item { flex: 1; padding: 12px 0; text-align: center; font-size: 10px; color: #555; }
-        .nav-item.active { color: var(--gold); background: #111; }
-
-        .item-card { background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .rarity-craft { border-color: var(--stamina); color: var(--stamina); }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; border-top: 2px solid var(--border); height: 60px; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #555; cursor: pointer; }
+        .nav-item.active { color: var(--gold); background: #111; border-top: 2px solid var(--gold); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--gold); margin-bottom:4px;">
-            <b id="ui-nick">Загрузка...</b>
+        <div class="game-title">TSCHORNI GAME ONLINE</div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--gold); margin-bottom:4px;">
+            <b id="ui-nick">---</b>
             <b>💰 <span id="gold">0</span></b>
         </div>
         <div class="bar-bg"><div class="bar-txt">❤️ HP: <span id="hp-val">0/0</span></div><div id="hp-fill" class="fill" style="background:var(--green)"></div></div>
         <div class="bar-bg"><div class="bar-txt">💪 STAMINA: <span id="st-val">0/0</span></div><div id="st-fill" class="fill" style="background:var(--stamina)"></div></div>
-        <div style="text-align:center; font-size:10px; color:#777;">Уровень: <span id="ui-lvl">1</span> | Статы: <b id="ui-pts" style="color:var(--green)">0</b></div>
+        <div style="text-align:center; font-size:9px; color:#666;">Level: <span id="ui-lvl">1</span></div>
     </div>
 
-    <div class="content">
+    <div class="content" style="padding:10px;">
         <div id="log"></div>
 
-        <div id="scr-town" class="screen active">
-            <div class="grid">
-                <button onclick="move('shop')">🛍️ Магазин</button>
-                <button onclick="move('craft')">🔨 Кузница</button>
-                <button onclick="move('runes')">💠 Алтарь Рун</button>
-                <button onclick="move('hospital')">🏥 Больница</button>
-                <button onclick="move('gift')">🎁 Подарки</button>
-                <button onclick="move('forest_1')" style="border-color:var(--green)">🌲 В ЛЕС</button>
+        <div id="scr-town" class="screen">
+            <div class="panel">
+                <h4 style="text-align:center; margin:0 0 10px 0;">🏙️ Центральный Квартал</h4>
+                <div class="grid">
+                    <button onclick="move('shop')">⚖️ Магазин</button>
+                    <button onclick="move('hospital')">🏥 Больница</button>
+                </div>
             </div>
+            <button style="width:100%; background:var(--blue); margin-top:10px; border:none;" onclick="move('world')">🧭 Выйти на охоту</button>
         </div>
 
-        <div id="scr-shop" class="screen">
-            <h4 style="text-align:center; color:var(--gold)">🛒 МАГАЗИН</h4>
-            <div id="shop-tabs" style="display:flex; gap:5px; margin-bottom:10px;">
-                <button style="flex:1" onclick="renderShop('equip')">Снаряжение</button>
-                <button style="flex:1" onclick="renderShop('cons')">Расходники</button>
-            </div>
-            <div id="shop-list"></div>
-            <button style="width:100%; margin-top:10px;" onclick="move('town')">Назад</button>
+        <div id="scr-world" class="screen">
+            <h4 style="text-align:center;">🗺️ Локация: <span id="loc-title">Дикие земли</span></h4>
+            <button style="width:100%; background:var(--red); height:60px; border:none; font-size:14px;" onclick="hunt()">⚔️ НАЙТИ ЦЕЛЬ</button>
+            <button style="width:100%; margin-top:15px;" onclick="move('town')">🏃 Вернуться в город</button>
         </div>
 
-        <div id="scr-craft" class="screen panel">
-            <h4 style="text-align:center; color:var(--stamina)">🔨 КУЗНИЦА (КРАФТ)</h4>
-            <div id="craft-list"></div>
-            <button style="width:100%; margin-top:10px;" onclick="move('town')">Назад</button>
+        <div id="scr-battle" class="screen">
+            <div class="panel" style="text-align:center; border-color:var(--red);">
+                <div id="en-img" style="font-size:50px; margin-bottom:10px;">👾</div>
+                <h3 id="en-name" style="margin:5px 0; color:var(--red);">Противник</h3>
+                <div class="bar-bg" style="width:80%; margin:0 auto;"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
+                <p id="battle-status" style="font-size:10px; color:#666;">Идет бой...</p>
+                <div class="grid" style="margin-top:15px;">
+                    <button onclick="battleHit()" id="hit-btn" style="background:var(--red); border:none; height:50px;">УДАРИТЬ</button>
+                    <button onclick="flee()" style="background:#000;">СБЕЖАТЬ</button>
+                </div>
+            </div>
         </div>
 
         <div id="scr-char" class="screen">
             <div class="panel">
-                <div class="char-slots">
-                    <div class="slot" id="sl-head">🪖<span class="slot-name">Голова</span></div>
-                    <div class="slot" id="sl-neck">📿<span class="slot-name">Амулет</span></div>
-                    <div class="slot" id="sl-weapon">⚔️<span class="slot-name">Оружие</span></div>
-                    <div class="slot" id="sl-belt">🎗️<span class="slot-name">Пояс</span></div>
-                    <div class="slot" id="sl-ring">💍<span class="slot-name">Кольцо</span></div>
-                    <div class="slot" id="sl-boots">👞<span class="slot-name">Обувь</span></div>
-                </div>
-                <div id="char-stats"></div>
-            </div>
-            <div class="panel">
-                <h5 style="margin:0 0 5px 0;">🎒 Рюкзак и Ресурсы</h5>
-                <div id="inv-res" style="font-size:10px; color:var(--gold); margin-bottom:10px;"></div>
-                <div id="inv-list"></div>
+                <h4 style="margin:0 0 10px 0; color:var(--gold);">👤 Профиль игрока</h4>
+                <div id="char-stats-list"></div>
             </div>
         </div>
-
-        <div id="scr-battle" class="screen" style="text-align:center;">
-            <div class="panel">
-                <h3 id="en-name" style="color:var(--red); margin:0;">Враг</h3>
-                <div id="en-img" style="font-size:40px;">👾</div>
-                <div class="bar-bg"><div id="en-hp-fill" class="fill" style="background:var(--red)"></div></div>
-                <div style="font-size:12px; margin-top:20px;">Твои действия:</div>
-                <div class="grid">
-                    <button onclick="battleHit()">⚔️ УДАР</button>
-                    <button onclick="usePotion()">🧪 ЗЕЛЬЕ</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active" id="n-town" onclick="move('town')">🏙️<br>Город</div>
-        <div class="nav-item" id="n-wild" onclick="hunt()">⚔️<br>Охота</div>
-        <div class="nav-item" id="n-char" onclick="move('char')">👤<br>Герой</div>
+        <div id="nav-town" class="nav-item" onclick="move('town')">🏙️<br>Город</div>
+        <div id="nav-world" class="nav-item" onclick="move('world')">🗺️<br>Мир</div>
+        <div id="nav-char" class="nav-item" onclick="move('char')">👤<br>Герой</div>
     </div>
 
     <script>
         const SB_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co"; 
         const SB_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
 
-        let p = JSON.parse(localStorage.getItem('save_v3')) || {
-            username: "Игрок", hp:100, st:100, gold:200, exp:0, lvl:1, points:5,
-            str:5, agi:5, vit:5, int:5,
-            equip: { head:null, neck:null, weapon:null, belt:null, ring:null, boots:null },
-            inv: [], res: { fang:0, scale:0, rune_shard:0 },
-            bank: 0
-        };
-
-        const items = {
-            'h1': { n: 'Кожаный шлем', slot:'head', cost:80, st:'vit', v:2 },
-            'w1': { n: 'Меч Новичка', slot:'weapon', cost:120, st:'str', v:4 },
-            'pot_hp': { n: 'Зелье Оздоровления', type:'cons', cost:30, v:50 },
-            'w_elite': { n: '🔥 Меч Инквизитора', slot:'weapon', craft: {fang:5, scale:2}, st:'str', v:15 }
+        // Загрузка состояния (включая текущий бой)
+        let p = JSON.parse(localStorage.getItem('save_v_tschorni')) || {
+            username: "Player", hp:100, st:100, gold:100, exp:0, lvl:1, points:5,
+            str:5, agi:5, vit:5, int:5, loc: 'town',
+            enemy: null 
         };
 
         const mobs = [
-            { n: 'Лесной Волк', i:'🐺', hp:80, dmg:8, exp:20, g:10, drop:'fang', drChance: 0.5 },
-            { n: 'Горный Дракон', i:'🐉', hp:400, dmg:40, exp:150, g:60, drop:'scale', drChance: 0.2 }
+            {n:'Лесной грабитель', i:'👤', hp:60, dmg:7, exp:25, g:15},
+            {n:'Дикий Вепрь', i:'🐗', hp:45, dmg:5, exp:15, g:8}
         ];
 
-        let enemy = null;
-
         function addLog(m) {
-            const time = new Intl.DateTimeFormat('ru-RU', {timeZone:'Europe/Berlin', hour:'2-digit', minute:'2-digit', second:'2-digit'}).format(new Date());
             const l = document.getElementById('log');
-            l.innerHTML += `<div><span style="color:#555">[${time}]</span> ${m}</div>`;
+            l.innerHTML += `<div><span style="color:#555">[${new Date().toLocaleTimeString()}]</span> ${m}</div>`;
             l.scrollTop = l.scrollHeight;
         }
 
+        function updateUI() {
+            let maxHp = 100 + p.vit * 20;
+            document.getElementById('ui-nick').innerText = p.username;
+            document.getElementById('gold').innerText = Math.floor(p.gold);
+            document.getElementById('ui-lvl').innerText = p.lvl;
+            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
+            document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
+            document.getElementById('st-val').innerText = `${Math.floor(p.st)}/100`;
+            document.getElementById('st-fill').style.width = p.st+'%';
+
+            if(p.enemy) {
+                document.getElementById('en-hp-fill').style.width = (p.enemy.curHp/p.enemy.hp*100)+'%';
+                document.getElementById('en-name').innerText = p.enemy.n;
+                document.getElementById('en-img').innerText = p.enemy.i;
+            }
+        }
+
         function move(scr) {
+            // Защита: если игрок в бою, он не может уйти в магазин или город
+            if(p.enemy && (scr === 'town' || scr === 'shop' || scr === 'hospital')) {
+                addLog("⚔️ Вы не можете уйти, пока идет бой!");
+                scr = 'battle';
+            }
+            
+            p.loc = (scr === 'battle') ? p.loc : scr;
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('scr-' + scr).classList.add('active');
-            if(scr === 'shop') renderShop('equip');
-            if(scr === 'craft') renderCraft();
-            if(scr === 'char') renderChar();
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            const target = document.getElementById('scr-' + scr);
+            if(target) target.classList.add('active');
+            
+            const nav = document.getElementById('nav-' + (scr === 'battle' ? 'world' : (scr === 'shop' ? 'town' : scr)));
+            if(nav) nav.classList.add('active');
+            
             updateUI();
-        }
-
-        function renderShop(type) {
-            const list = document.getElementById('shop-list');
-            list.innerHTML = '';
-            for(let id in items) {
-                const it = items[id];
-                if(type === 'cons' && it.type !== 'cons') continue;
-                if(type === 'equip' && (it.type === 'cons' || it.craft)) continue;
-                list.innerHTML += `<div class="item-card">
-                    <span>${it.n} (${it.cost}💰)</span>
-                    <button onclick="buy('${id}')">Купить</button>
-                </div>`;
-            }
-        }
-
-        function buy(id) {
-            const it = items[id];
-            if(p.gold >= it.cost) {
-                p.gold -= it.cost;
-                if(it.type === 'cons') p.inv.push(id);
-                else p.inv.push(id);
-                addLog(`Куплено: ${it.n}`);
-                updateUI(); save();
-            }
-        }
-
-        function renderCraft() {
-            const list = document.getElementById('craft-list');
-            list.innerHTML = '';
-            for(let id in items) {
-                const it = items[id];
-                if(!it.craft) continue;
-                list.innerHTML += `<div class="item-card rarity-craft">
-                    <div><b>${it.n}</b><br><small>Требует: Клыки(${it.craft.fang}), Чешуя(${it.craft.scale})</small></div>
-                    <button onclick="craft('${id}')">Создать</button>
-                </div>`;
-            }
-        }
-
-        function craft(id) {
-            const it = items[id];
-            if(p.res.fang >= it.craft.fang && p.res.scale >= it.craft.scale) {
-                p.res.fang -= it.craft.fang;
-                p.res.scale -= it.craft.scale;
-                p.inv.push(id);
-                addLog(`⚒️ Скрафчено: ${it.n}`);
-                renderCraft(); save();
-            } else { alert("Недостаточно ресурсов!"); }
-        }
-
-        function renderChar() {
-            const list = document.getElementById('inv-list');
-            list.innerHTML = '';
-            document.getElementById('inv-res').innerText = `Клыки: ${p.res.fang} | Чешуя: ${p.res.scale}`;
-            p.inv.forEach((id, idx) => {
-                const it = items[id];
-                list.innerHTML += `<div class="item-card">
-                    <span>${it.n}</span>
-                    <button onclick="equip('${id}', ${idx})">${it.type==='cons'?'Пить':'Надеть'}</button>
-                </div>`;
-            });
-            // Обновление иконок куклы
-            for(let s in p.equip) {
-                const id = p.equip[s];
-                document.getElementById('sl-'+s).innerHTML = id ? items[id].n.substring(0,2) : '➖';
-            }
-        }
-
-        function equip(id, idx) {
-            const it = items[id];
-            if(it.type === 'cons') {
-                p.hp = Math.min(p.hp + it.v, 100 + p.vit*20);
-                p.inv.splice(idx, 1);
-                addLog(`🧪 Выпито: ${it.n}`);
-            } else {
-                p.equip[it.slot] = id;
-                addLog(`⚔️ Надето: ${it.n}`);
-            }
-            renderChar(); updateUI(); save();
+            save();
         }
 
         function hunt() {
-            enemy = {...mobs[Math.random() > 0.8 ? 1 : 0]};
-            enemy.curHp = enemy.hp;
-            document.getElementById('en-name').innerText = enemy.n;
-            document.getElementById('en-img').innerText = enemy.i;
+            if(p.hp < 20) return addLog("🏥 Вы слишком ранены! Нужно подлечиться.");
+            const m = mobs[Math.floor(Math.random()*mobs.length)];
+            p.enemy = { ...m, curHp: m.hp };
+            addLog(`⚔️ Внимание! На вас напал <b>${p.enemy.n}</b>!`);
             move('battle');
         }
 
         function battleHit() {
-            if(p.st < 10) return addLog("Устал! Нужно отдохнуть.");
-            p.st -= 10;
-            let dmg = p.str + Math.floor(Math.random()*5);
-            enemy.curHp -= dmg;
-            addLog(`Вы ударили ${enemy.n} на ${dmg}`);
+            if(!p.enemy) return;
+
+            // Логика урона: если стамины мало, урон минимален, но бить можно
+            let isExhausted = p.st < 10;
+            let dmg = isExhausted ? (Math.floor(Math.random()*2)+1) : (p.str + Math.floor(Math.random()*5));
             
-            if(enemy.curHp <= 0) {
-                addLog(`🏆 Победа! +${enemy.exp} опыта.`);
-                p.exp += enemy.exp; p.gold += enemy.g;
-                if(Math.random() < enemy.drChance) {
-                    p.res[enemy.drop]++;
-                    addLog(`💎 Выпал ресурс: ${enemy.drop}`);
-                }
-                checkLvl(); move('town');
-                return;
+            if(!isExhausted) p.st -= 10; 
+            else addLog("💨 Вы выдохлись! Удары стали слабыми...");
+
+            p.enemy.curHp -= dmg;
+            addLog(`Вы ударили противника на <b>${dmg}</b> урона.`);
+
+            if(p.enemy.curHp <= 0) {
+                addLog(`🏆 Победа! Вы получили ${p.enemy.exp} опыта и ${p.enemy.g} золота.`);
+                p.exp += p.enemy.exp; p.gold += p.enemy.g;
+                p.enemy = null;
+                checkLvl();
+                save();
+                return move('world');
             }
-            
-            let edmg = enemy.dmg;
-            p.hp -= edmg;
-            addLog(`${enemy.n} бьет вас на ${edmg}`);
-            if(p.hp <= 0) { p.hp=10; move('town'); addLog("💀 Вы потеряли сознание!"); }
+
+            // Ход противника
+            let eDmg = Math.max(1, p.enemy.dmg - Math.floor(p.vit/4));
+            p.hp -= eDmg;
+            addLog(`${p.enemy.n} нанес вам <b>${eDmg}</b> урона.`);
+
+            if(p.hp <= 0) {
+                p.hp = 20; p.enemy = null;
+                addLog("💀 Вы потеряли сознание и пришли в себя в городе...");
+                move('town');
+            }
             updateUI();
+            save();
         }
 
         function checkLvl() {
-            if(p.exp >= p.lvl * 200) {
+            let next = p.lvl * 200;
+            if(p.exp >= next) {
                 p.lvl++; p.points += 3;
-                addLog(`🎊 УРОВЕНЬ ПОВЫШЕН! Текущий: ${p.lvl}`);
+                addLog(`🎊 Поздравляем! Ваш уровень повышен до <b>${p.lvl}</b>!`);
             }
         }
 
-        function updateUI() {
-            let maxHp = 100 + p.vit*20;
-            document.getElementById('ui-nick').innerText = p.username;
-            document.getElementById('gold').innerText = p.gold;
-            document.getElementById('ui-lvl').innerText = p.lvl;
-            document.getElementById('ui-pts').innerText = p.points;
-            document.getElementById('hp-val').innerText = `${Math.ceil(p.hp)}/${maxHp}`;
-            document.getElementById('hp-fill').style.width = (p.hp/maxHp*100)+'%';
-            document.getElementById('st-val').innerText = `${p.st}/100`;
-            document.getElementById('st-fill').style.width = p.st+'%';
-            if(enemy) document.getElementById('en-hp-fill').style.width = (enemy.curHp/enemy.hp*100)+'%';
+        function flee() {
+            if(Math.random() > 0.5) {
+                p.enemy = null;
+                addLog("🏳️ Вам удалось успешно сбежать.");
+                move('world');
+            } else {
+                addLog("🚫 Не удалось сбежать! Враг преградил путь.");
+                battleHit(); // Враг бьет при неудачном побеге
+            }
         }
 
         async function save() {
-            localStorage.setItem('save_v3', JSON.stringify(p));
-            await fetch(`${SB_URL}/rest/v1/users?username=eq.${p.username}`, {
-                method: 'PATCH',
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ save_data: p })
-            });
+            localStorage.setItem('save_v_tschorni', JSON.stringify(p));
+            try {
+                await fetch(`${SB_URL}/rest/v1/users?username=eq.${p.username}`, {
+                    method: 'PATCH',
+                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ save_data: p })
+                });
+            } catch(e) {}
         }
 
-        setInterval(() => { if(!enemy && p.st < 100) { p.st = Math.min(100, p.st+5); updateUI(); } }, 5000);
-        updateUI();
+        // РЕГЕНЕРАЦИЯ (работает каждые 4 секунды)
+        setInterval(() => {
+            let maxHp = 100 + p.vit * 20;
+            if(!p.enemy) {
+                // Вне боя восстанавливаемся быстро
+                if(p.hp < maxHp) p.hp = Math.min(maxHp, p.hp + 4);
+                if(p.st < 100) p.st = Math.min(100, p.st + 10);
+            } else {
+                // В бою восстанавливается только 1 стамина (чтобы можно было бить)
+                if(p.st < 100) p.st = Math.min(100, p.st + 2);
+            }
+            updateUI();
+        }, 4000);
+
+        // Инициализация при запуске
+        window.onload = () => {
+            addLog("Добро пожаловать в <b>TSCHORNI GAME ONLINE</b>!");
+            if(p.enemy) {
+                addLog("⚔️ Бой продолжается...");
+                move('battle');
+            } else {
+                move(p.loc || 'town');
+            }
+        };
     </script>
 </body>
 </html>
