@@ -57,7 +57,7 @@
 
 <script>
 // ────────────────────────────────────────────────
-// КОНФИГ И ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+// КОНФИГ
 // ────────────────────────────────────────────────
 const S_URL = "https://xgnzgapvvulizxtqdyzn.supabase.co";
 const S_KEY = "sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT";
@@ -71,12 +71,12 @@ let isAuthInProgress = false;
 
 const MOBS = {
     'Лес': [
-        { n: 'Дикий Волк',       hp: 50,  maxHp: 50,  dmg: 5,  exp: 20,  gold: 10 },
-        { n: 'Лесной Разбойник', hp: 80,  maxHp: 80,  dmg: 8,  exp: 40,  gold: 25 }
+        { n: 'Дикий Волк', hp: 50, maxHp: 50, dmg: 5, exp: 20, gold: 10 },
+        { n: 'Лесной Разбойник', hp: 80, maxHp: 80, dmg: 8, exp: 40, gold: 25 }
     ],
     'Шахта': [
-        { n: 'Каменный Слизень', hp: 100, maxHp:100, dmg: 4,  exp: 35,  gold: 15 },
-        { n: 'Гоблин-Шахтер',    hp: 150, maxHp:150, dmg:12,  exp: 70,  gold: 50 }
+        { n: 'Каменный Слизень', hp: 100, maxHp:100, dmg: 4, exp: 35, gold: 15 },
+        { n: 'Гоблин-Шахтер', hp: 150, maxHp:150, dmg:12, exp: 70, gold: 50 }
     ]
 };
 
@@ -95,8 +95,8 @@ function addLog(message) {
 
 function updateUI() {
     if (!userData) return;
-    const maxHp = 100 + (userData.vit * 10);
-    const maxSt = 100 + (userData.str * 5);
+    const maxHp = 100 + (userData.vit * 10 || 50);
+    const maxSt = 100 + (userData.str * 5 || 25);
 
     document.getElementById('r-lvl').innerText = userData.level || 1;
     document.getElementById('r-gold').innerText = Math.floor(userData.gold || 0);
@@ -124,7 +124,7 @@ function initSupabase() {
 }
 
 // ────────────────────────────────────────────────
-// АВТОРИЗАЦИЯ
+// АВТОРИЗАЦИЯ (email теперь @gmail.com)
 // ────────────────────────────────────────────────
 async function auth(mode) {
     if (isAuthInProgress) return;
@@ -153,7 +153,7 @@ async function auth(mode) {
         return;
     }
 
-    const email = nick.toLowerCase() + '@tschorni.game';
+    const email = nick.toLowerCase() + '@gmail.com';  // ← ИЗМЕНЕНО ЗДЕСЬ
 
     try {
         if (mode === 'reg') {
@@ -164,14 +164,14 @@ async function auth(mode) {
             });
             if (error) throw error;
             msg.innerHTML = `Герой "${nick}" создан! Входи.`;
-            addLog(`Регистрация: ${nick}`);
+            addLog(`Регистрация: ${nick} (${email})`);
         } else {
             const { data: { session }, error } = await sb.auth.signInWithPassword({
                 email,
                 password: pass
             });
             if (error) throw error;
-            addLog(`Вход: ${nick}`);
+            addLog(`Вход: ${nick} (${email})`);
             await loadPlayerData();
         }
     } catch (err) {
@@ -183,18 +183,18 @@ async function auth(mode) {
 }
 
 // ────────────────────────────────────────────────
-// ЗАГРУЗКА ДАННЫХ ГЕРОЯ (исправленная версия)
+// ЗАГРУЗКА ГЕРОЯ
 // ────────────────────────────────────────────────
 async function loadPlayerData() {
     addLog("1. Начало загрузки героя");
 
     try {
-        const { data: { user }, error: authErr } = await sb.auth.getUser();
-        if (authErr || !user) {
-            addLog("Нет пользователя: " + (authErr?.message || "нет user"));
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) {
+            addLog("Нет пользователя после входа");
             return;
         }
-        addLog("2. Пользователь найден, uid: " + user.id);
+        addLog("2. UID: " + user.id);
 
         const username = user.user_metadata?.username || user.email?.split('@')[0];
         if (!username) {
@@ -203,7 +203,7 @@ async function loadPlayerData() {
         }
         addLog("3. Username: " + username);
 
-        addLog("4. Запрос к таблице users...");
+        addLog("4. Запрос к users...");
 
         const { data, error, count } = await sb
             .from('users')
@@ -220,7 +220,7 @@ async function loadPlayerData() {
         if (count === 0 || !data || data.length === 0) {
             addLog("6. Создаём нового героя");
             const initial = {
-                id: user.id,  // ← Связываем с auth.uid() для RLS
+                id: user.id,
                 username: username,
                 current_hp: 150,
                 stamina: 100,
@@ -232,7 +232,7 @@ async function loadPlayerData() {
                 exp: 0,
                 level: 1,
                 location: 'Лагерь',
-                inventory: [{name:'Ржавый нож', str:2, icon:'🔪'}, {name:'Тряпки', vit:2, icon:'👕'}]
+                inventory: []
             };
 
             const { error: insErr } = await sb.from('users').insert(initial);
@@ -259,7 +259,7 @@ async function loadPlayerData() {
 }
 
 // ────────────────────────────────────────────────
-// ОСНОВНОЙ ЦИКЛ ИГРЫ (остальное без изменений)
+// ИГРОВЫЕ ФУНКЦИИ (остальные без изменений)
 // ────────────────────────────────────────────────
 function startApp() {
     updateUI();
@@ -308,7 +308,118 @@ function setTab(t) {
     }
 }
 
-// ... (остальные функции: renderFight, spawnEnemy, attack, checkLevelUp, renderHero, travel, buyPot, tick остаются такими же, как в предыдущей версии)
+function renderFight() {
+    const c = document.getElementById('tab-content');
+    if (!enemy) {
+        c.innerHTML = `<h4>Засада!</h4><button class="btn" onclick="spawnEnemy()">ИСКАТЬ МОБА</button>`;
+        return;
+    }
+    c.innerHTML = `
+        <div class="mob-box">
+            <div style="font-weight:bold;color:var(--hp)">${enemy.n}</div>
+            <div class="bar-bg"><div id="en-hp" class="bar-fill" style="background:var(--hp);width:${(enemy.hp/enemy.maxHp*100)}%"></div></div>
+            <div style="font-size:10px">${Math.floor(enemy.hp)} / ${enemy.maxHp} HP</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+            <button class="btn" style="height:60px" onclick="attack()">УДАРИТЬ</button>
+            <button class="btn" style="height:60px;background:#555;color:#fff" onclick="enemy=null;setTab('fight')">СБЕЖАТЬ</button>
+        </div>`;
+}
+
+function spawnEnemy() {
+    const mobs = MOBS[userData.location] || [];
+    if (!mobs.length) return;
+    enemy = { ...mobs[Math.floor(Math.random() * mobs.length)] };
+    renderFight();
+}
+
+function attack() {
+    if (!enemy || (userData.stamina || 0) < 10) {
+        addLog((userData.stamina || 0) < 10 ? 'Мало стамины!' : 'Нет цели');
+        return;
+    }
+    userData.stamina = (userData.stamina || 0) - 10;
+    let dmg = 5 + (userData.str || 5);
+    enemy.hp -= dmg;
+    addLog(`Вы ударили → ${dmg}`);
+
+    if (enemy.hp <= 0) {
+        addLog(`Победа! +${enemy.exp} exp +${enemy.gold} gold`);
+        userData.exp = (userData.exp || 0) + enemy.exp;
+        userData.gold = (userData.gold || 0) + enemy.gold;
+        enemy = null;
+        checkLevelUp();
+        setTab('fight');
+    } else {
+        let edmg = Math.max(1, enemy.dmg - Math.floor((userData.vit || 0) / 2));
+        userData.current_hp = (userData.current_hp || 0) - edmg;
+        addLog(`${enemy.n} → ${edmg}`);
+        if (userData.current_hp <= 0) {
+            userData.current_hp = 10;
+            userData.location = 'Лагерь';
+            enemy = null;
+            addLog('Вы очнулись в Лагере...');
+            setTab('world');
+        }
+    }
+    updateUI();
+    if (enemy) renderFight();
+}
+
+function checkLevelUp() {
+    while (userData.level < EXP_TABLE.length - 1 && (userData.exp || 0) >= EXP_TABLE[userData.level + 1]) {
+        userData.level++;
+        userData.str = (userData.str || 5) + 2;
+        userData.vit = (userData.vit || 5) + 2;
+        addLog(`✨ Уровень ${userData.level}! +2 STR +2 VIT`);
+    }
+}
+
+function renderHero() {
+    const c = document.getElementById('tab-content');
+    let tbl = `<table><tr><th>Ур.</th><th>До след.</th></tr>`;
+    for (let i = 1; i < EXP_TABLE.length; i++) {
+        const style = userData.level === i ? 'style="color:var(--gold);font-weight:bold"' : '';
+        tbl += `<tr ${style}><td>${i}</td><td>${EXP_TABLE[i]}</td></tr>`;
+    }
+    tbl += '</table>';
+
+    c.innerHTML = `
+        <h4>Герой: ${userData.username || '??'}</h4>
+        <div style="font-size:12px">
+            Сила ${userData.str || 5} • Живучесть ${userData.vit || 5}<br>
+            Предметов: ${userData.inventory?.length || 0}
+        </div>
+        ${tbl}`;
+}
+
+function travel(loc) {
+    userData.location = loc;
+    enemy = null;
+    addLog(`→ ${loc}`);
+    setTab('world');
+    updateUI();
+}
+
+function buyPot() {
+    if ((userData.gold || 0) >= 50) {
+        userData.gold = (userData.gold || 0) - 50;
+        userData.current_hp = 100 + (userData.vit || 5) * 10;
+        addLog('Зелье выпито — HP полностью!');
+        updateUI();
+    } else {
+        addLog('Недостаточно золота');
+    }
+}
+
+function tick() {
+    if (!userData) return;
+    const maxHp = 100 + (userData.vit || 5) * 10;
+    const maxSt = 100 + (userData.str || 5) * 5;
+    if ((userData.current_hp || 0) < maxHp) userData.current_hp = Math.min(maxHp, (userData.current_hp || 0) + 2);
+    if ((userData.stamina || 0) < maxSt) userData.stamina = Math.min(maxSt, (userData.stamina || 0) + 3);
+    updateUI();
+}
 
 // ────────────────────────────────────────────────
 // ЗАПУСК
