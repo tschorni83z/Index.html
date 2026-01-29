@@ -264,7 +264,6 @@
 
   <button onclick="closeFight()">Завершить бой</button>
 </div>
-
 <script>
 // ==================================================
 // ДАННЫЕ ИГРОКА
@@ -336,7 +335,6 @@ function progressAction(callback, duration = 1200) {
   }
   requestAnimationFrame(animate);
 }
-
 // ==================================================
 // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
 // ==================================================
@@ -397,7 +395,6 @@ function showShop() {
   }
   showPanel('shop'); renderShop(); 
 }
-
 // ==================================================
 // ИНВЕНТАРЬ
 // ==================================================
@@ -518,8 +515,7 @@ function doCraft(index) {
 // ==================================================
 function startFight(mob) {
   currentMob = mob;
-  document.getElementById('fight').style.display = 'block';
-  document.getElementById('panel-overlay').style.display = 'block';
+  showPanel('fight');
   document.getElementById('mob-name').textContent = mob.name;
   document.getElementById('mob-level').textContent = mob.level;
   document.getElementById('mob-hp').textContent = mob.hp;
@@ -602,8 +598,7 @@ function renderFight() {
 }
 
 function closeFight() {
-  document.getElementById('fight').style.display = 'none';
-  document.getElementById('panel-overlay').style.display = 'none';
+  closePanel('fight');
   currentMob = null;
   updateUI();
 }
