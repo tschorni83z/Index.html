@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TSCHORNI WORLD — Мультиплеер</title>
+  <title>TSCHORNI: MOB HUNTER</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
@@ -16,63 +16,54 @@
       padding:8px; box-sizing:border-box;
     }
     #header {
-      text-align:center; font-size:24px; color:#ff0; text-shadow:0 0 10px #ff0;
-      margin-bottom:8px;
+      text-align:center; font-size:28px; color:#ff0; text-shadow:0 0 12px #ff0;
+      margin:8px 0; pointer-events:none;
     }
     #top {
       display:flex; justify-content:space-between; font-size:14px;
-      background:rgba(0,0,0,0.6); padding:4px; border-radius:4px;
+      background:rgba(0,0,0,0.7); padding:6px; border-radius:6px;
     }
     #bars {
-      margin:8px 0; display:flex; flex-direction:column; gap:4px;
+      margin:10px 0; display:flex; flex-direction:column; gap:6px;
     }
     .bar {
-      height:12px; background:#222; border:1px solid #0f0; border-radius:2px;
+      height:14px; background:#111; border:1px solid #0f0; border-radius:3px;
       position:relative; overflow:hidden;
     }
     .fill {
-      height:100%; transition:width 0.3s;
+      height:100%; transition:width 0.4s ease;
     }
-    .hp .fill { background:#f44; }
-    .st .fill { background:#ff0; }
+    .hp .fill { background:linear-gradient(#f44, #800); }
+    .st .fill { background:linear-gradient(#ff0, #880); }
     .bar-label {
-      position:absolute; inset:0; text-align:center; font-size:10px; line-height:12px;
+      position:absolute; inset:0; text-align:center; font-size:11px; line-height:14px;
       color:#000; text-shadow:0 0 2px #fff;
     }
-    #players-list {
-      position:fixed; top:140px; left:8px; background:rgba(0,0,0,0.7);
-      padding:8px; border:1px solid #0f0; border-radius:4px; max-height:200px;
-      overflow-y:auto; font-size:12px; pointer-events:none;
-    }
-    #chat {
-      position:fixed; bottom:180px; left:8px; right:8px; height:100px;
-      background:rgba(0,0,0,0.7); border:1px solid #0f0; border-radius:4px;
-      padding:8px; overflow-y:auto; font-size:13px; color:#0ff;
-    }
-    #chat-input {
-      position:fixed; bottom:140px; left:8px; right:8px; height:30px;
-      background:#000; color:#0f0; border:1px solid #0f0; padding:0 8px;
-      font-family:monospace; font-size:14px; pointer-events:auto;
+    #log {
+      max-height:160px; overflow-y:auto; font-size:12px; color:#0f8;
+      background:rgba(0,0,0,0.7); padding:6px; border-radius:6px;
+      pointer-events:none;
     }
     #bottom {
       display:flex; flex-wrap:wrap; gap:6px; pointer-events:auto;
-      background:rgba(0,0,0,0.6); padding:4px; border-radius:4px;
+      background:rgba(0,0,0,0.7); padding:6px; border-radius:6px;
     }
     button {
-      background:#000; color:#0f0; border:1px solid #0f0; padding:6px 10px;
-      cursor:pointer; font-family:monospace; font-size:13px;
+      background:#000; color:#0f0; border:1px solid #0f0; padding:8px 12px;
+      cursor:pointer; font-family:monospace; font-size:14px;
     }
     button:hover { background:#0a0; color:#000; }
+    button:disabled { opacity:0.4; cursor:not-allowed; }
   </style>
 </head>
 <body>
 
 <div id="ui">
-  <div id="header">TSCHORNI WORLD</div>
+  <div id="header">TSCHORNI: MOB HUNTER</div>
 
   <div id="top">
     <div>
-      <input id="myname" placeholder="Твоё имя" style="background:#000;color:#0f0;border:1px solid #0f0;padding:4px;width:120px;" value="Герой">
+      <input id="myname" placeholder="Твоё имя" style="background:#000;color:#0f0;border:1px solid #0f0;padding:4px;width:140px;" value="Герой">
       <span id="lvl">1 ур.</span>
     </div>
     <div>
@@ -91,11 +82,6 @@
       <div class="bar-label" id="st-label">Выносливость 100/100</div>
     </div>
   </div>
-
-  <div id="players-list"></div>
-
-  <div id="chat"></div>
-  <input id="chat-input" placeholder="Нажми Enter чтобы отправить..." />
 
   <div id="log"></div>
 
@@ -120,13 +106,11 @@ const supabase = Supabase.createClient(
 const channel = supabase.channel('tschorni_world');
 
 // ==================================================
-// Игрок (твои данные)
+// Игрок
 // ==================================================
 let me = {
   id: crypto.randomUUID(),
   name: localStorage.getItem('playerName') || "Герой",
-  x: 320,
-  y: 240,
   hp: 100,
   maxHp: 100,
   stamina: 100,
@@ -147,19 +131,7 @@ function updateMyPosition() {
   channel.send({
     type: 'broadcast',
     event: 'player-update',
-    payload: {
-      id: me.id,
-      name: me.name,
-      x: me.x,
-      y: me.y,
-      hp: me.hp,
-      maxHp: me.maxHp,
-      stamina: me.stamina,
-      maxStamina: me.maxStamina,
-      gold: me.gold,
-      level: me.level,
-      location: me.location
-    }
+    payload: me
   });
 }
 
@@ -209,15 +181,8 @@ channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
 });
 
 // ==================================================
-// Локации и передвижение
+// Локации
 // ==================================================
-const locations = {
-  'Лагерь': '#111',
-  'Лес': '#0a2',
-  'Шахта': '#222',
-  'Город': '#444'
-};
-
 function go(loc) {
   me.location = loc;
   updateMyPosition();
@@ -266,9 +231,8 @@ function die() {
 // Запуск
 // ==================================================
 log('Добро пожаловать в TSCHORNI WORLD!', '#0ff');
-log('Введите имя сверху и нажми Enter');
-log('Переключай локации кнопками снизу');
-log('Другие игроки видны в списке и могут писать в чат');
+log('Введите имя сверху и нажмите Enter');
+log('Переключайте локации кнопками');
 updateUI();
 
 // Обновление позиции каждые 2 секунды
