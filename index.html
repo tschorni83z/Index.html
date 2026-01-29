@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TSCHORNI WORLD</title>
+  <title>TSCHORNI WORLD — Мультиплеер</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin:0; padding:0; background:#000; color:#0f0; font-family:monospace;
@@ -20,28 +21,48 @@
     }
     #top {
       display:flex; justify-content:space-between; font-size:14px;
+      background:rgba(0,0,0,0.6); padding:4px; border-radius:4px;
+    }
+    #bars {
+      margin:8px 0; display:flex; flex-direction:column; gap:4px;
+    }
+    .bar {
+      height:12px; background:#222; border:1px solid #0f0; border-radius:2px;
+      position:relative; overflow:hidden;
+    }
+    .fill {
+      height:100%; transition:width 0.3s;
+    }
+    .hp .fill { background:#f44; }
+    .st .fill { background:#ff0; }
+    .bar-label {
+      position:absolute; inset:0; text-align:center; font-size:10px; line-height:12px;
+      color:#000; text-shadow:0 0 2px #fff;
+    }
+    #players-list {
+      position:fixed; top:140px; left:8px; background:rgba(0,0,0,0.7);
+      padding:8px; border:1px solid #0f0; border-radius:4px; max-height:200px;
+      overflow-y:auto; font-size:12px; pointer-events:none;
+    }
+    #chat {
+      position:fixed; bottom:180px; left:8px; right:8px; height:100px;
+      background:rgba(0,0,0,0.7); border:1px solid #0f0; border-radius:4px;
+      padding:8px; overflow-y:auto; font-size:13px; color:#0ff;
+    }
+    #chat-input {
+      position:fixed; bottom:140px; left:8px; right:8px; height:30px;
+      background:#000; color:#0f0; border:1px solid #0f0; padding:0 8px;
+      font-family:monospace; font-size:14px; pointer-events:auto;
     }
     #bottom {
       display:flex; flex-wrap:wrap; gap:6px; pointer-events:auto;
+      background:rgba(0,0,0,0.6); padding:4px; border-radius:4px;
     }
     button {
-      pointer-events:auto; background:#000; color:#0f0; border:1px solid #0f0;
-      padding:6px 10px; cursor:pointer; font-family:monospace; font-size:13px;
+      background:#000; color:#0f0; border:1px solid #0f0; padding:6px 10px;
+      cursor:pointer; font-family:monospace; font-size:13px;
     }
     button:hover { background:#0a0; color:#000; }
-    button:disabled { opacity:0.4; cursor:not-allowed; }
-    #log {
-      max-height:140px; overflow-y:auto; font-size:12px; color:#0f8;
-      margin-top:8px; pointer-events:none; text-shadow:0 0 3px #000;
-    }
-    #inv, #craft, #shop {
-      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      background:#111; border:2px solid #0f0; padding:16px; color:#0f0;
-      max-width:90%; max-height:80vh; overflow:auto; z-index:20;
-      display:none; pointer-events:auto;
-    }
-    .item { margin:6px 0; padding:6px; border:1px solid #333; background:#0008; }
-    .eq { background:#004400; }
   </style>
 </head>
 <body>
@@ -51,15 +72,30 @@
 
   <div id="top">
     <div>
-      <span id="name">Безымянный</span> 
-      <span id="lvl">1 ур.</span> 
-      <span id="hp">100/100</span>
+      <input id="myname" placeholder="Твоё имя" style="background:#000;color:#0f0;border:1px solid #0f0;padding:4px;width:120px;" value="Герой">
+      <span id="lvl">1 ур.</span>
     </div>
     <div>
       <span id="loc">Лагерь</span> 
       <span id="gold">0 зол.</span>
     </div>
   </div>
+
+  <div id="bars">
+    <div class="bar hp">
+      <div class="fill" id="hp-fill" style="width:100%;"></div>
+      <div class="bar-label" id="hp-label">HP 100/100</div>
+    </div>
+    <div class="bar st">
+      <div class="fill" id="st-fill" style="width:100%;"></div>
+      <div class="bar-label" id="st-label">Выносливость 100/100</div>
+    </div>
+  </div>
+
+  <div id="players-list"></div>
+
+  <div id="chat"></div>
+  <input id="chat-input" placeholder="Нажми Enter чтобы отправить..." />
 
   <div id="log"></div>
 
@@ -68,173 +104,183 @@
     <button onclick="go('Лес')">Лес</button>
     <button onclick="go('Шахта')">Шахта</button>
     <button onclick="go('Город')">Город</button>
-    <button onclick="showInv()">Инвентарь</button>
-    <button onclick="showCraft()">Крафт</button>
-    <button onclick="showShop()">Магазин</button>
     <button onclick="die()">Умереть</button>
   </div>
 </div>
 
-<div id="inv">
-  <h3>Инвентарь</h3>
-  <div id="inv-list"></div>
-  <h3>Экипировка</h3>
-  <div id="equip-list"></div>
-  <hr/>
-  <button onclick="closeInv()">Закрыть</button>
-</div>
-
-<div id="craft">
-  <h3>Крафт</h3>
-  <div id="craft-list"></div>
-  <hr/>
-  <button onclick="closeCraft()">Закрыть</button>
-</div>
-
-<div id="shop">
-  <h3>Магазин</h3>
-  <div id="shop-list"></div>
-  <hr/>
-  <button onclick="closeShop()">Закрыть</button>
-</div>
-
 <script>
 // ==================================================
-// ДАННЫЕ ИГРОКА (сохранение)
+// Supabase — твои ключи из скрина
 // ==================================================
-let player = JSON.parse(localStorage.getItem('tschorniWorld')) || {
-  name: "Безымянный",
-  level: 1,
-  exp: 0,
-  expToNext: 100,
+const supabase = Supabase.createClient(
+  'https://xgnzgapvvulizxtqdyzn.supabase.co',
+  'sb_publishable_DtZvknbQ-Cy2mDqN6G-kfg_yLavMwLT'
+);
+
+const channel = supabase.channel('tschorni_world');
+
+// ==================================================
+// Игрок (твои данные)
+// ==================================================
+let me = {
+  id: crypto.randomUUID(),
+  name: localStorage.getItem('playerName') || "Герой",
+  x: 320,
+  y: 240,
   hp: 100,
   maxHp: 100,
+  stamina: 100,
+  maxStamina: 100,
   gold: 0,
-  str: 5,
-  vit: 5,
-  location: "Лагерь",
-  inventory: [
-    {id:"rKnife", name:"Ржавый нож", type:"weapon", str:3, count:1},
-    {id:"rags", name:"Тряпьё", type:"armor", vit:2, count:1}
-  ],
-  equip: {
-    weapon: {id:"rKnife", name:"Ржавый нож", str:3},
-    armor: {id:"rags", name:"Тряпьё", vit:2}
-  },
-  resources: { wood:0, ore:0, herb:0 }
+  level: 1,
+  location: 'Лагерь'
 };
 
-function save() {
-  localStorage.setItem('tschorniWorld', JSON.stringify(player));
+document.getElementById('myname').value = me.name;
+document.getElementById('myname').onchange = e => {
+  me.name = e.target.value.trim() || "Герой";
+  localStorage.setItem('playerName', me.name);
+  updateMyPosition();
+};
+
+function updateMyPosition() {
+  channel.send({
+    type: 'broadcast',
+    event: 'player-update',
+    payload: {
+      id: me.id,
+      name: me.name,
+      x: me.x,
+      y: me.y,
+      hp: me.hp,
+      maxHp: me.maxHp,
+      stamina: me.stamina,
+      maxStamina: me.maxStamina,
+      gold: me.gold,
+      level: me.level,
+      location: me.location
+    }
+  });
 }
 
 // ==================================================
-// ЛОГ
+// Другие игроки
+// ==================================================
+let players = {};
+
+function updatePlayersList() {
+  let list = document.getElementById('players-list');
+  list.innerHTML = '<b>Игроки онлайн:</b><br>';
+  Object.values(players).forEach(p => {
+    list.innerHTML += `${p.name} (Lv.${p.level}) — ${p.location}<br>`;
+  });
+}
+
+channel.on('broadcast', { event: 'player-update' }, ({ payload }) => {
+  if (payload.id === me.id) return;
+  players[payload.id] = payload;
+  updatePlayersList();
+});
+
+channel.subscribe();
+
+// ==================================================
+// Чат
+// ==================================================
+const chat = document.getElementById('chat');
+const input = document.getElementById('chat-input');
+
+input.addEventListener('keypress', e => {
+  if (e.key === 'Enter' && input.value.trim()) {
+    channel.send({
+      type: 'broadcast',
+      event: 'chat',
+      payload: { name: me.name, text: input.value.trim() }
+    });
+    input.value = '';
+  }
+});
+
+channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
+  let msg = document.createElement('div');
+  msg.textContent = `${payload.name}: ${payload.text}`;
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+});
+
+// ==================================================
+// Локации и передвижение
+// ==================================================
+const locations = {
+  'Лагерь': '#111',
+  'Лес': '#0a2',
+  'Шахта': '#222',
+  'Город': '#444'
+};
+
+function go(loc) {
+  me.location = loc;
+  updateMyPosition();
+  document.getElementById('loc').textContent = loc;
+  log(`Вы прибыли в ${loc}`, '#0ff');
+}
+
+// ==================================================
+// Лог
 // ==================================================
 function log(txt, color = '#0f8') {
   let div = document.createElement('div');
   div.textContent = txt;
   div.style.color = color;
   document.getElementById('log').appendChild(div);
-  div.scrollIntoView({behavior:'smooth'});
   if (document.getElementById('log').children.length > 20) {
     document.getElementById('log').removeChild(document.getElementById('log').firstChild);
   }
 }
 
 // ==================================================
-// ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
+// Обновление интерфейса
 // ==================================================
 function updateUI() {
-  document.getElementById('name').textContent = player.name;
-  document.getElementById('lvl').textContent = `${player.level} ур.`;
-  document.getElementById('hp').textContent = `${Math.max(0,player.hp)}/${player.maxHp}`;
-  document.getElementById('loc').textContent = player.location;
-  document.getElementById('gold').textContent = `${player.gold} зол.`;
+  document.getElementById('lvl').textContent = `${me.level} ур.`;
+  document.getElementById('hp-label').textContent = `HP ${Math.max(0,me.hp)}/${me.maxHp}`;
+  document.getElementById('hp-fill').style.width = (me.hp / me.maxHp * 100) + '%';
+  document.getElementById('st-label').textContent = `Выносливость ${Math.max(0,me.stamina)}/${me.maxStamina}`;
+  document.getElementById('st-fill').style.width = (me.stamina / me.maxStamina * 100) + '%';
+  document.getElementById('gold').textContent = `${me.gold} зол.`;
 }
 
 // ==================================================
-// ПЕРЕХОД В ЛОКАЦИЮ
+// Смерть
 // ==================================================
-function go(location) {
-  if (player.location === location) return;
-  player.location = location;
-  log(`Вы прибыли в ${location}`, '#0ff');
+function die() {
+  log('Вы умерли... Возрождение в Лагере', '#f44');
+  me.hp = me.maxHp;
+  me.stamina = me.maxStamina;
+  me.location = 'Лагерь';
+  updateMyPosition();
   updateUI();
-  renderMobs();
 }
 
 // ==================================================
-// МОБЫ И БОЙ
+// Запуск
 // ==================================================
-let mobs = [];
-
-function renderMobs() {
-  let c = document.getElementById('tab-content') || document.createElement('div');
-  c.innerHTML = '<h4>Противники</h4>';
-  if (mobs.length === 0) {
-    c.innerHTML += '<p>Здесь пусто... Пока.</p>';
-  }
-  mobs.forEach((m,i) => {
-    let perc = (m.hp / m.maxHp * 100).toFixed(0);
-    c.innerHTML += `
-      <div style="margin:6px 0;">
-        ${m.name} (${m.hp}/${m.maxHp}) 
-        <button onclick="hitMob(${i})">Ударить (${player.str + (player.equip.weapon?.str || 0)} dmg)</button>
-      </div>`;
-  });
-  if (!document.getElementById('tab-content')) document.body.appendChild(c);
-}
-
-function hitMob(index) {
-  if (!mobs[index] || player.hp <= 0) return;
-  let mob = mobs[index];
-  let dmg = player.str + (player.equip.weapon?.str || 0) + Math.floor(Math.random()*6);
-  mob.hp -= dmg;
-  log(`→ ${dmg} урона ${mob.name}`, '#ff0');
-
-  if (mob.hp <= 0) {
-    log(`Убит ${mob.name}!`, '#0ff');
-    player.exp += mob.exp;
-    player.gold += mob.gold;
-    for (let res in mob.res) {
-      player.resources[res] = (player.resources[res] || 0) + mob.res[res];
-    }
-    mobs.splice(index, 1);
-
-    // прокачка уровня
-    while (player.exp >= player.expToNext) {
-      player.level++;
-      player.exp -= player.expToNext;
-      player.expToNext = Math.floor(player.expToNext * 1.7);
-      player.str += 2;
-      player.vit += 2;
-      player.maxHp += 30;
-      player.hp = player.maxHp;
-      log(`Уровень ${player.level}! +2 STR +2 VIT +30 HP`, '#ff0');
-    }
-  } else {
-    let mobDmg = Math.max(1, mob.dmg - Math.floor(player.vit/3) - (player.equip.armor?.vit || 0));
-    player.hp -= mobDmg;
-    log(`${mob.name} → ${mobDmg}`, '#f44');
-    if (player.hp <= 0) {
-      log('Вы мертвы!', '#f00');
-      player.hp = 1;
-    }
-  }
-
-  updateUI();
-  renderMobs();
-}
-
-// ==================================================
-// ИНИЦИАЛИЗАЦИЯ И ЗАПУСК
-// ==================================================
+log('Добро пожаловать в TSCHORNI WORLD!', '#0ff');
+log('Введите имя сверху и нажми Enter');
+log('Переключай локации кнопками снизу');
+log('Другие игроки видны в списке и могут писать в чат');
 updateUI();
-go('Лагерь');
-log('Добро пожаловать в TSCHORNI WORLD!');
-log('Переключай локации → бей мобов → добывай ресурсы → крафти → покупай шмот');
-log('Прогресс сохраняется автоматически');
+
+// Обновление позиции каждые 2 секунды
+setInterval(updateMyPosition, 2000);
+
+// Восстановление выносливости
+setInterval(() => {
+  if (me.stamina < me.maxStamina) {
+    me.stamina = Math.min(me.maxStamina, me.stamina + 1);
+    updateUI();
+  }
+}, 2000);
 </script>
 </body>
 </html>
