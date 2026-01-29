@@ -335,6 +335,7 @@ function progressAction(callback, duration = 1200) {
   }
   requestAnimationFrame(animate);
 }
+
 // ==================================================
 // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
 // ==================================================
@@ -351,7 +352,6 @@ function updateUI() {
   document.getElementById('st-fill').style.width = stPerc + '%';
   document.getElementById('st-label').textContent = `Выносливость ${Math.floor(player.stamina)}/${player.maxStamina}`;
 }
-
 // ==================================================
 // ПЕРЕХОД В ЛОКАЦИЮ
 // ==================================================
@@ -395,6 +395,7 @@ function showShop() {
   }
   showPanel('shop'); renderShop(); 
 }
+
 // ==================================================
 // ИНВЕНТАРЬ
 // ==================================================
@@ -471,7 +472,6 @@ function buy(id, price) {
   save();
   updateUI();
 }
-
 // ==================================================
 // КРАФТ
 // ==================================================
