@@ -114,14 +114,28 @@
       border-color:#444;
       cursor:not-allowed;
     }
-    .panel {
-      background:#111;
-      border:1px solid #400;
-      border-radius:6px;
-      padding:12px;
-      margin:12px auto;
-      max-width:600px;
+    .panel-overlay {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.85);
+      z-index:999;
       display:none;
+    }
+    .panel {
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%, -50%);
+      background:#111;
+      border:2px solid #800;
+      border-radius:8px;
+      padding:20px;
+      max-width:90%;
+      max-height:85vh;
+      overflow-y:auto;
+      z-index:1000;
+      display:none;
+      box-shadow:0 0 20px rgba(255,0,0,0.3);
     }
     .item {
       background:#1a1a1a;
@@ -129,6 +143,37 @@
       border-radius:4px;
       padding:8px;
       margin:6px 0;
+    }
+    #fight {
+      width:90%;
+      max-width:700px;
+    }
+    .fighter {
+      flex:1;
+      text-align:center;
+      padding:16px;
+      background:#1a1a1a;
+      border:1px solid #400;
+      border-radius:6px;
+    }
+    .action-bar {
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      margin:20px 0;
+    }
+    .progress-line {
+      height:6px;
+      background:#222;
+      border-radius:3px;
+      overflow:hidden;
+      margin:12px 0;
+    }
+    .progress-fill {
+      height:100%;
+      width:0%;
+      background:#ff6600;
+      transition:width 1.2s ease;
     }
   </style>
 </head>
@@ -170,6 +215,8 @@
   </div>
 </div>
 
+<div id="panel-overlay" class="panel-overlay" onclick="closeAllPanels()"></div>
+
 <div id="inv" class="panel">
   <h2>Инвентарь</h2>
   <div id="inv-list"></div>
@@ -193,7 +240,34 @@
   <button onclick="closePanel('shop')">Закрыть</button>
 </div>
 
-  <script>
+<div id="fight" class="panel">
+  <h2>Бой</h2>
+  <div id="fight-screen">
+    <div class="fighter fighter-player">
+      <h3>Вы</h3>
+      <div>HP: <span id="player-hp">100</span>/<span id="player-maxhp">100</span></div>
+      <div>Выносливость: <span id="player-st">100</span>/<span id="player-maxst">100</span></div>
+    </div>
+    <div class="fighter fighter-mob">
+      <h3 id="mob-name">Враг</h3>
+      <div>Уровень: <span id="mob-level">1</span></div>
+      <div>HP: <span id="mob-hp">100</span>/<span id="mob-maxhp">100</span></div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button onclick="playerAttack()">Атака</button>
+    <button onclick="playerBlock()">Блок</button>
+    <button onclick="playerRun()">Сбежать</button>
+  </div>
+
+  <div class="progress-line">
+    <div class="progress-fill" id="action-progress"></div>
+  </div>
+
+  <button onclick="closeFight()">Завершить бой</button>
+</div>
+<script>
 // ==================================================
 // ДАННЫЕ ИГРОКА
 // ==================================================
@@ -220,6 +294,8 @@ let player = JSON.parse(localStorage.getItem('tschorniWorld')) || {
   },
   resources: { wood:0, ore:0, herb:0 }
 };
+
+let currentMob = null;
 
 function save() {
   localStorage.setItem('tschorniWorld', JSON.stringify(player));
@@ -262,8 +338,7 @@ function progressAction(callback, duration = 1200) {
   }
   requestAnimationFrame(animate);
 }
-
-// ==================================================
+  // ==================================================
 // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
 // ==================================================
 function updateUI() {
@@ -294,83 +369,40 @@ function go(loc) {
 }
 
 // ==================================================
-// МОБЫ И БОЙ (с уровнями)
+// ПАНЕЛИ (инвентарь, крафт, магазин, бой)
 // ==================================================
-let mobs = [];
-
-function renderMobs() {
-  const list = document.getElementById('mobs-list');
-  list.innerHTML = '';
-  if (player.location === 'Лагерь' || player.location === 'Город') {
-    list.innerHTML = '<p>Здесь безопасно</p>';
-    return;
-  }
-  const mobTypes = player.location === 'Лес' ? ['Волк', 'Гоблин', 'Олень'] : ['Скелет', 'Гоблин-шахтёр', 'Паук'];
-  for (let i = 0; i < 3; i++) {
-    const name = mobTypes[Math.floor(Math.random() * mobTypes.length)];
-    const level = Math.max(1, player.level - 1 + Math.floor(Math.random() * 4));
-    const mob = {
-      name,
-      level,
-      hp: 40 + level * 15 + Math.floor(Math.random() * 30),
-      maxHp: 0,
-      dmg: level + 5,
-      exp: 25 + level * 10,
-      gold: 8 + level * 5 + Math.floor(Math.random() * 15)
-    };
-    mob.maxHp = mob.hp;
-    mobs.push(mob);
-    list.innerHTML += `
-      <div class="mob">
-        ${mob.name} (ур. ${mob.level}) (${mob.hp}/${mob.maxHp}) 
-        <button onclick="hitMob(${i})">Ударить (${player.str + (player.equip.weapon?.str || 0)} dmg)</button>
-      </div>`;
-  }
+function closeAllPanels() {
+  document.getElementById('panel-overlay').style.display = 'none';
+  ['inv', 'craft', 'shop', 'fight'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
 }
 
-function hitMob(index) {
-  if (!mobs[index] || player.hp <= 0 || player.stamina < 10) return;
-  player.stamina -= 10;
-  let mob = mobs[index];
-  let dmg = player.str + (player.equip.weapon?.str || 0) + Math.floor(Math.random() * 6);
-  mob.hp -= dmg;
-  log(`→ ${dmg} урона ${mob.name}`, '#ff4444');
+function showPanel(id) {
+  closeAllPanels();
+  document.getElementById('panel-overlay').style.display = 'block';
+  document.getElementById(id).style.display = 'block';
+}
 
-  if (mob.hp <= 0) {
-    log(`Убит ${mob.name} (ур. ${mob.level})!`, '#00ff00');
-    player.exp += mob.exp;
-    player.gold += mob.gold;
-    mobs.splice(index, 1);
+function closePanel(id) {
+  document.getElementById(id).style.display = 'none';
+  document.getElementById('panel-overlay').style.display = 'none';
+}
 
-    while (player.exp >= player.expToNext) {
-      player.level++;
-      player.exp -= player.expToNext;
-      player.expToNext = Math.floor(player.expToNext * 1.7);
-      player.str += 2;
-      player.vit += 2;
-      player.maxHp += 30;
-      player.hp = player.maxHp;
-      log(`Уровень ${player.level}! +2 STR +2 VIT +30 HP`, '#ffff00');
-    }
-  } else {
-    let mobDmg = Math.max(1, mob.dmg - Math.floor(player.vit / 3) - (player.equip.armor?.vit || 0));
-    player.hp -= mobDmg;
-    log(`${mob.name} → ${mobDmg}`, '#ff4444');
-    if (player.hp <= 0) {
-      log('Вы мертвы!', '#ff0000');
-      player.hp = 1;
-    }
+function showInv() { showPanel('inv'); renderInventory(); }
+function showCraft() { showPanel('craft'); renderCraft(); }
+function showShop() { 
+  if (player.location !== 'Город') {
+    log('Магазин только в Городе', '#ff4444');
+    return;
   }
-
-  updateUI();
-  renderMobs();
+  showPanel('shop'); renderShop(); 
 }
 
 // ==================================================
 // ИНВЕНТАРЬ
 // ==================================================
-function showInv() {
-  closeAllPanels();
+function renderInventory() {
   const list = document.getElementById('inv-list');
   list.innerHTML = '';
   player.inventory.forEach((item, i) => {
@@ -388,23 +420,30 @@ function showInv() {
   eq.innerHTML = '';
   if (player.equip.weapon) eq.innerHTML += `<div class="item eq">Оружие: ${player.equip.weapon.name} (+${player.equip.weapon.str} STR)</div>`;
   if (player.equip.armor) eq.innerHTML += `<div class="item eq">Броня: ${player.equip.armor.name} (+${player.equip.armor.vit} VIT)</div>`;
-
-  document.getElementById('inv').style.display = 'block';
 }
 
-function closeInv() {
-  document.getElementById('inv').style.display = 'none';
-}
+function equip(index, slot) {
+  const item = player.inventory[index];
+  if (!item) return;
 
+  if (player.equip[slot]) {
+    player.inventory.push({...player.equip[slot], count:1});
+  }
+
+  player.equip[slot] = {id:item.id, name:item.name, str:item.str || 0, vit:item.vit || 0};
+  item.count = (item.count || 1) - 1;
+  if (item.count <= 0) player.inventory.splice(index, 1);
+
+  log(`Надето: ${item.name}`, '#00ff00');
+  save();
+  updateUI();
+  renderInventory();
+}
+  
 // ==================================================
 // МАГАЗИН
 // ==================================================
-function showShop() {
-  if (player.location !== 'Город') {
-    log('Магазин только в Городе', '#ff4444');
-    return;
-  }
-  closeAllPanels();
+function renderShop() {
   const items = [
     {id:'knife2', name:'Железный нож', type:'weapon', str:8, price:150},
     {id:'leather', name:'Кожаная куртка', type:'armor', vit:8, price:200},
@@ -415,13 +454,7 @@ function showShop() {
   items.forEach(it => {
     html += `<div class="item">${it.name} — ${it.price} зол. <button onclick="buy('${it.id}',${it.price})">Купить</button></div>`;
   });
-
   document.getElementById('shop-list').innerHTML = html;
-  document.getElementById('shop').style.display = 'block';
-}
-
-function closeShop() {
-  document.getElementById('shop').style.display = 'none';
 }
 
 function buy(id, price) {
@@ -446,8 +479,7 @@ function buy(id, price) {
 // ==================================================
 // КРАФТ
 // ==================================================
-function showCraft() {
-  closeAllPanels();
+function renderCraft() {
   const recipes = [
     {result:{id:'ironKnife', name:'Железный нож', type:'weapon', str:12, count:1}, need:{ore:3, wood:1}},
     {result:{id:'ironArmor', name:'Железная броня', type:'armor', vit:12, count:1}, need:{ore:5, wood:2}}
@@ -463,13 +495,7 @@ function showCraft() {
     }
     html += `<div class="item">${r.result.name} — ${needTxt} <button ${can ? '' : 'disabled'} onclick="doCraft(${i})">Создать</button></div>`;
   });
-
   document.getElementById('craft-list').innerHTML = html;
-  document.getElementById('craft').style.display = 'block';
-}
-
-function closeCraft() {
-  document.getElementById('craft').style.display = 'none';
 }
 
 function doCraft(index) {
@@ -485,7 +511,104 @@ function doCraft(index) {
   log(`Создано: ${r.result.name}`, '#00ff00');
   save();
   updateUI();
-  showCraft();
+  renderCraft();
+}
+
+// ==================================================
+// БОЙ (полноценный)
+// ==================================================
+let currentMob = null;
+
+function startFight(mob) {
+  currentMob = mob;
+  document.getElementById('fight').style.display = 'block';
+  document.getElementById('panel-overlay').style.display = 'block';
+  document.getElementById('mob-name').textContent = mob.name;
+  document.getElementById('mob-level').textContent = mob.level;
+  document.getElementById('mob-hp').textContent = mob.hp;
+  document.getElementById('mob-maxhp').textContent = mob.maxHp;
+  document.getElementById('player-hp').textContent = player.hp;
+  document.getElementById('player-maxhp').textContent = player.maxHp;
+  document.getElementById('player-st').textContent = player.stamina;
+  document.getElementById('player-maxst').textContent = player.maxStamina;
+  log(`Бой начался: ${mob.name} (ур. ${mob.level})`, '#ff6600');
+}
+
+function playerAttack() {
+  if (!currentMob || player.stamina < 15) return;
+  player.stamina -= 15;
+  const dmg = player.str + (player.equip.weapon?.str || 0) + Math.floor(Math.random() * 8);
+  currentMob.hp -= dmg;
+  log(`→ ${dmg} урона ${currentMob.name}`, '#ff4444');
+
+  if (currentMob.hp <= 0) {
+    log(`Убит ${currentMob.name} (ур. ${currentMob.level})!`, '#00ff00');
+    player.exp += currentMob.exp;
+    player.gold += currentMob.gold;
+    closeFight();
+    while (player.exp >= player.expToNext) {
+      player.level++;
+      player.exp -= player.expToNext;
+      player.expToNext = Math.floor(player.expToNext * 1.7);
+      player.str += 2;
+      player.vit += 2;
+      player.maxHp += 30;
+      player.hp = player.maxHp;
+      log(`Уровень ${player.level}! +2 STR +2 VIT +30 HP`, '#ffff00');
+    }
+  } else {
+    mobAttack();
+  }
+
+  updateUI();
+  renderFight();
+}
+
+function playerBlock() {
+  if (!currentMob || player.stamina < 5) return;
+  player.stamina -= 5;
+  log('Блок поставлен', '#0044cc');
+  mobAttack(true);
+}
+
+function playerRun() {
+  if (Math.random() > 0.6) {
+    log('Удалось сбежать!', '#00ff00');
+    closeFight();
+  } else {
+    log('Не удалось сбежать!', '#ff4444');
+    mobAttack();
+  }
+}
+
+function mobAttack(isBlocked = false) {
+  let mobDmg = Math.max(1, currentMob.dmg - Math.floor(player.vit / 3) - (player.equip.armor?.vit || 0));
+  if (isBlocked) mobDmg = Math.floor(mobDmg / 2);
+  player.hp -= mobDmg;
+  log(`${currentMob.name} → ${mobDmg}${isBlocked ? ' (блок)' : ''}`, '#ff4444');
+
+  if (player.hp <= 0) {
+    log('Вы мертвы!', '#ff0000');
+    player.hp = 1;
+    closeFight();
+    die();
+  }
+
+  updateUI();
+  renderFight();
+}
+
+function renderFight() {
+  document.getElementById('player-hp').textContent = Math.max(0, player.hp);
+  document.getElementById('player-st').textContent = Math.max(0, player.stamina);
+  document.getElementById('mob-hp').textContent = Math.max(0, currentMob.hp);
+}
+
+function closeFight() {
+  document.getElementById('fight').style.display = 'none';
+  document.getElementById('panel-overlay').style.display = 'none';
+  currentMob = null;
+  updateUI();
 }
 
 // ==================================================
@@ -501,19 +624,6 @@ function die() {
   save();
   updateUI();
   go('Лагерь');
-}
-
-// ==================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ==================================================
-function closeAllPanels() {
-  ['inv', 'craft', 'shop'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
-  });
-}
-
-function closePanel(id) {
-  document.getElementById(id).style.display = 'none';
 }
 
 // ==================================================
