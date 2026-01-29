@@ -1,127 +1,146 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TSCHORNI: MOB HUNTER</title>
   <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      margin: 0;
-      padding: 0;
-      background: #f8f8f8;
-      color: #111;
-      font-family: monospace;
-      user-select: none;
+      background:#000;
+      color:#e0e0e0;
+      font-family:Arial, Helvetica, sans-serif;
+      font-size:13px;
+      line-height:1.4;
+      overflow:hidden;
+      height:100vh;
     }
-    #ui {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 16px;
+    #container {
+      height:100vh;
+      display:flex;
+      flex-direction:column;
     }
-    h1 {
-      text-align: center;
-      color: #c00;
-      margin: 16px 0;
-      font-size: 32px;
+    #header {
+      background:#111;
+      border-bottom:2px solid #400;
+      padding:8px 12px;
+      color:#ff6600;
+      font-size:18px;
+      font-weight:bold;
+      text-align:center;
     }
-    #stats {
-      display: flex;
-      justify-content: space-between;
-      margin: 16px 0;
-      font-size: 16px;
-      font-weight: bold;
+    #topbar {
+      background:#1a1a1a;
+      border-bottom:1px solid #333;
+      padding:6px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:14px;
+    }
+    #topbar span { color:#ffcc00; }
+    #bars {
+      padding:8px 12px;
+      background:#111;
+      border-bottom:1px solid #400;
     }
     .bar {
-      height: 20px;
-      background: #ddd;
-      border: 2px solid #333;
-      border-radius: 4px;
-      margin: 8px 0;
-      position: relative;
-      overflow: hidden;
+      height:18px;
+      background:#222;
+      border:1px solid #444;
+      border-radius:3px;
+      margin:6px 0;
+      position:relative;
+      overflow:hidden;
     }
     .fill {
-      height: 100%;
-      transition: width 0.4s ease;
+      height:100%;
+      transition:width 0.5s ease;
     }
-    .hp .fill { background: #e33; }
-    .st .fill { background: #ee0; }
+    .hp .fill { background:linear-gradient(to right, #c00, #800); }
+    .st .fill { background:linear-gradient(to right, #ffcc00, #cc9900); }
     .label {
-      position: absolute;
-      inset: 0;
-      text-align: center;
-      line-height: 20px;
-      color: #000;
-      font-weight: bold;
-      text-shadow: 0 0 3px #fff;
+      position:absolute;
+      inset:0;
+      text-align:center;
+      line-height:18px;
+      color:#fff;
+      font-size:11px;
+      text-shadow:1px 1px #000;
+    }
+    #content {
+      flex:1;
+      padding:12px;
+      overflow-y:auto;
+      background:#0d0d0d;
     }
     #log {
-      background: #fff;
-      border: 1px solid #aaa;
-      border-radius: 6px;
-      padding: 10px;
-      max-height: 160px;
-      overflow-y: auto;
-      margin: 16px 0;
-      font-size: 13px;
-      color: #222;
+      background:#000;
+      border:1px solid #400;
+      border-radius:4px;
+      padding:8px;
+      margin-top:12px;
+      max-height:180px;
+      overflow-y:auto;
+      font-size:12px;
+      color:#0f8;
     }
-    #bottom {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin: 20px 0;
+    #bottombar {
+      background:#111;
+      border-top:2px solid #400;
+      padding:8px 12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      justify-content:center;
     }
     button {
-      background: #333;
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 15px;
-      min-width: 100px;
+      background:#400;
+      color:#ffcc00;
+      border:1px solid #800;
+      padding:8px 14px;
+      border-radius:4px;
+      cursor:pointer;
+      font-size:14px;
+      min-width:90px;
     }
-    button:hover { background: #555; }
-    button:disabled { background: #999; cursor: not-allowed; }
-    #inv, #craft, #shop {
-      background: #fff;
-      border: 2px solid #333;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px auto;
-      max-width: 600px;
-      display: none;
+    button:hover {
+      background:#600;
+      border-color:#a00;
+    }
+    button:disabled {
+      background:#222;
+      color:#555;
+      border-color:#444;
+      cursor:not-allowed;
+    }
+    .panel {
+      background:#111;
+      border:1px solid #400;
+      border-radius:6px;
+      padding:12px;
+      margin:12px auto;
+      max-width:600px;
+      display:none;
     }
     .item {
-      background: #f8f8f8;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 8px;
-      margin: 8px 0;
-    }
-    #mobs {
-      margin: 16px 0;
-    }
-    .mob {
-      background: #ffe;
-      border: 1px solid #c80;
-      border-radius: 4px;
-      padding: 8px;
-      margin: 8px 0;
+      background:#1a1a1a;
+      border:1px solid #400;
+      border-radius:4px;
+      padding:8px;
+      margin:6px 0;
     }
   </style>
 </head>
 <body>
 
-<div id="ui">
-  <h1>TSCHORNI: MOB HUNTER</h1>
+<div id="container">
+  <div id="header">TSCHORNI: MOB HUNTER</div>
 
-  <div id="stats">
+  <div id="topbar">
     <span id="name">Герой</span>
     <span id="lvl">1 ур.</span>
-    <span id="gold">0 золота</span>
+    <span id="gold">0 зол.</span>
   </div>
 
   <div id="bars">
@@ -135,14 +154,11 @@
     </div>
   </div>
 
-  <div id="mobs">
-    <h3>Враги в локации</h3>
-    <div id="mobs-list"></div>
+  <div id="content">
+    <div id="log"></div>
   </div>
 
-  <div id="log"></div>
-
-  <div id="bottom">
+  <div id="bottombar">
     <button onclick="go('Лагерь')">Лагерь</button>
     <button onclick="go('Лес')">Лес</button>
     <button onclick="go('Шахта')">Шахта</button>
@@ -154,27 +170,27 @@
   </div>
 </div>
 
-<div id="inv">
+<div id="inv" class="panel">
   <h2>Инвентарь</h2>
   <div id="inv-list"></div>
   <h3>Экипировка</h3>
   <div id="equip-list"></div>
-  <hr/>
-  <button onclick="closeInv()">Закрыть</button>
+  <hr>
+  <button onclick="closePanel('inv')">Закрыть</button>
 </div>
 
-<div id="craft">
+<div id="craft" class="panel">
   <h2>Крафт</h2>
   <div id="craft-list"></div>
-  <hr/>
-  <button onclick="closeCraft()">Закрыть</button>
+  <hr>
+  <button onclick="closePanel('craft')">Закрыть</button>
 </div>
 
-<div id="shop">
+<div id="shop" class="panel">
   <h2>Магазин</h2>
   <div id="shop-list"></div>
-  <hr/>
-  <button onclick="closeShop()">Закрыть</button>
+  <hr>
+  <button onclick="closePanel('shop')">Закрыть</button>
 </div>
 
   <script>
@@ -210,17 +226,41 @@ function save() {
 }
 
 // ==================================================
-// ЛОГ
+// ЛОГ + ПРОГРЕСС-ДЕЙСТВИЯ
 // ==================================================
-function log(txt, color = '#006600') {
+function log(txt, color = '#0f8') {
   const div = document.createElement('div');
   div.textContent = txt;
   div.style.color = color;
   document.getElementById('log').appendChild(div);
   div.scrollIntoView({behavior:'smooth'});
-  if (document.getElementById('log').children.length > 15) {
+  if (document.getElementById('log').children.length > 20) {
     document.getElementById('log').removeChild(document.getElementById('log').firstChild);
   }
+}
+
+function progressAction(callback, duration = 1200) {
+  const progress = document.createElement('div');
+  progress.className = 'progress-line';
+  const fill = document.createElement('div');
+  fill.className = 'progress-fill';
+  progress.appendChild(fill);
+  document.getElementById('content').prepend(progress);
+
+  let start = null;
+  function animate(timestamp) {
+    if (!start) start = timestamp;
+    const elapsed = timestamp - start;
+    const progressVal = Math.min(1, elapsed / duration);
+    fill.style.width = (progressVal * 100) + '%';
+    if (elapsed < duration) {
+      requestAnimationFrame(animate);
+    } else {
+      progress.remove();
+      callback();
+    }
+  }
+  requestAnimationFrame(animate);
 }
 
 // ==================================================
@@ -244,14 +284,17 @@ function updateUI() {
 // ПЕРЕХОД В ЛОКАЦИЮ
 // ==================================================
 function go(loc) {
-  player.location = loc;
-  log(`→ ${loc}`, '#0044cc');
-  updateUI();
-  renderMobs();
+  if (player.location === loc) return;
+  progressAction(() => {
+    player.location = loc;
+    log(`→ ${loc}`, '#ffcc00');
+    updateUI();
+    renderMobs();
+  });
 }
 
 // ==================================================
-// МОБЫ И БОЙ
+// МОБЫ И БОЙ (с уровнями)
 // ==================================================
 let mobs = [];
 
@@ -265,20 +308,17 @@ function renderMobs() {
   const mobTypes = player.location === 'Лес' ? ['Волк', 'Гоблин', 'Олень'] : ['Скелет', 'Гоблин-шахтёр', 'Паук'];
   for (let i = 0; i < 3; i++) {
     const name = mobTypes[Math.floor(Math.random() * mobTypes.length)];
+    const level = Math.max(1, player.level - 1 + Math.floor(Math.random() * 4));
     const mob = {
       name,
-      level: Math.max(1, player.level - 1 + Math.floor(Math.random() * 3)),
-      hp: 0,
+      level,
+      hp: 40 + level * 15 + Math.floor(Math.random() * 30),
       maxHp: 0,
-      dmg: 0,
-      exp: 0,
-      gold: 0
+      dmg: level + 5,
+      exp: 25 + level * 10,
+      gold: 8 + level * 5 + Math.floor(Math.random() * 15)
     };
-    mob.maxHp = 40 + mob.level * 15 + Math.floor(Math.random() * 30);
-    mob.hp = mob.maxHp;
-    mob.dmg = mob.level + 5;
-    mob.exp = 25 + mob.level * 10;
-    mob.gold = 8 + mob.level * 5 + Math.floor(Math.random() * 15);
+    mob.maxHp = mob.hp;
     mobs.push(mob);
     list.innerHTML += `
       <div class="mob">
@@ -294,10 +334,10 @@ function hitMob(index) {
   let mob = mobs[index];
   let dmg = player.str + (player.equip.weapon?.str || 0) + Math.floor(Math.random() * 6);
   mob.hp -= dmg;
-  log(`→ ${dmg} урона ${mob.name}`, '#aa0000');
+  log(`→ ${dmg} урона ${mob.name}`, '#ff4444');
 
   if (mob.hp <= 0) {
-    log(`Убит ${mob.name} (ур. ${mob.level})!`, '#006600');
+    log(`Убит ${mob.name} (ур. ${mob.level})!`, '#00ff00');
     player.exp += mob.exp;
     player.gold += mob.gold;
     mobs.splice(index, 1);
@@ -310,14 +350,14 @@ function hitMob(index) {
       player.vit += 2;
       player.maxHp += 30;
       player.hp = player.maxHp;
-      log(`Уровень ${player.level}! +2 STR +2 VIT +30 HP`, '#aa6600');
+      log(`Уровень ${player.level}! +2 STR +2 VIT +30 HP`, '#ffff00');
     }
   } else {
     let mobDmg = Math.max(1, mob.dmg - Math.floor(player.vit / 3) - (player.equip.armor?.vit || 0));
     player.hp -= mobDmg;
-    log(`${mob.name} → ${mobDmg}`, '#cc0000');
+    log(`${mob.name} → ${mobDmg}`, '#ff4444');
     if (player.hp <= 0) {
-      log('Вы мертвы!', '#880000');
+      log('Вы мертвы!', '#ff0000');
       player.hp = 1;
     }
   }
@@ -330,6 +370,7 @@ function hitMob(index) {
 // ИНВЕНТАРЬ
 // ==================================================
 function showInv() {
+  closeAllPanels();
   const list = document.getElementById('inv-list');
   list.innerHTML = '';
   player.inventory.forEach((item, i) => {
@@ -355,33 +396,15 @@ function closeInv() {
   document.getElementById('inv').style.display = 'none';
 }
 
-function equip(index, slot) {
-  const item = player.inventory[index];
-  if (!item) return;
-
-  if (player.equip[slot]) {
-    player.inventory.push({...player.equip[slot], count:1});
-  }
-
-  player.equip[slot] = {id:item.id, name:item.name, str:item.str || 0, vit:item.vit || 0};
-  item.count = (item.count || 1) - 1;
-  if (item.count <= 0) player.inventory.splice(index, 1);
-
-  log(`Надето: ${item.name}`, '#006600');
-  save();
-  updateUI();
-  showInv();
-}
-
 // ==================================================
 // МАГАЗИН
 // ==================================================
 function showShop() {
   if (player.location !== 'Город') {
-    log('Магазин только в Городе', '#880000');
+    log('Магазин только в Городе', '#ff4444');
     return;
   }
-
+  closeAllPanels();
   const items = [
     {id:'knife2', name:'Железный нож', type:'weapon', str:8, price:150},
     {id:'leather', name:'Кожаная куртка', type:'armor', vit:8, price:200},
@@ -403,7 +426,7 @@ function closeShop() {
 
 function buy(id, price) {
   if (player.gold < price) {
-    log('Недостаточно золота', '#880000');
+    log('Недостаточно золота', '#ff4444');
     return;
   }
   player.gold -= price;
@@ -415,7 +438,7 @@ function buy(id, price) {
     vit: id === 'leather' ? 8 : 0
   };
   player.inventory.push(item);
-  log(`Куплено: ${item.name}`, '#006600');
+  log(`Куплено: ${item.name}`, '#00ff00');
   save();
   updateUI();
 }
@@ -424,6 +447,7 @@ function buy(id, price) {
 // КРАФТ
 // ==================================================
 function showCraft() {
+  closeAllPanels();
   const recipes = [
     {result:{id:'ironKnife', name:'Железный нож', type:'weapon', str:12, count:1}, need:{ore:3, wood:1}},
     {result:{id:'ironArmor', name:'Железная броня', type:'armor', vit:12, count:1}, need:{ore:5, wood:2}}
@@ -458,7 +482,7 @@ function doCraft(index) {
     player.resources[res] -= r.need[res];
   }
   player.inventory.push(r.result);
-  log(`Создано: ${r.result.name}`, '#006600');
+  log(`Создано: ${r.result.name}`, '#00ff00');
   save();
   updateUI();
   showCraft();
@@ -468,7 +492,7 @@ function doCraft(index) {
 // СМЕРТЬ
 // ==================================================
 function die() {
-  log('Вы мертвы... Возрождение в Лагере', '#880000');
+  log('Вы мертвы... Возрождение в Лагере', '#ff4444');
   player.hp = player.maxHp;
   player.stamina = player.maxStamina;
   player.exp = Math.floor(player.exp * 0.6);
@@ -480,23 +504,34 @@ function die() {
 }
 
 // ==================================================
-// ВОССТАНОВЛЕНИЕ ВЫНОСЛИВОСТИ
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==================================================
-setInterval(() => {
-  if (player.stamina < player.maxStamina) {
-    player.stamina = Math.min(player.maxStamina, player.stamina + 1);
-    updateUI();
-  }
-}, 2000);
+function closeAllPanels() {
+  ['inv', 'craft', 'shop'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+}
+
+function closePanel(id) {
+  document.getElementById(id).style.display = 'none';
+}
 
 // ==================================================
 // ЗАПУСК
 // ==================================================
 updateUI();
 go('Лагерь');
-log('Добро пожаловать в TSCHORNI: MOB HUNTER!', '#0066cc');
+log('Добро пожаловать в TSCHORNI: MOB HUNTER!', '#ff6600');
 log('Переключай локации → бей мобов → крафти → покупай шмот');
 log('Прогресс сохраняется автоматически');
+
+// Восстановление выносливости
+setInterval(() => {
+  if (player.stamina < player.maxStamina) {
+    player.stamina = Math.min(player.maxStamina, player.stamina + 1);
+    updateUI();
+  }
+}, 2000);
 </script>
 </body>
 </html>
